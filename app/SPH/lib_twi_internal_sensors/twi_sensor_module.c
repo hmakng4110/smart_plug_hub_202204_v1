@@ -88,8 +88,8 @@ static int twi_instance_init(void) {
 	ret_code_t err;
 
 	nrf_drv_twi_config_t twi_config;
-	twi_config.sda = TWI_SCL;
-	twi_config.scl = TWI_SDA;
+	twi_config.sda = HAT_TWI_SCL;
+	twi_config.scl = HAT_TWI_SDA;
 	twi_config.frequency = NRF_DRV_TWI_FREQ_400K;
 	twi_config.interrupt_priority = TWI_DEFAULT_CONFIG_IRQ_PRIORITY;
 	twi_config.clear_bus_init = TWI_DEFAULT_CONFIG_CLR_BUS_INIT;
@@ -179,8 +179,8 @@ static uint32_t color_sensor_init(const nrf_drv_twi_t * p_twi_instance)
 
     static const nrf_drv_twi_config_t twi_config =
     {
-        .scl                = TWI_SCL,
-        .sda                = TWI_SDA,
+        .scl                = HAT_TWI_SCL,
+        .sda                = HAT_TWI_SDA,
         .frequency          = NRF_TWI_FREQ_400K,
         .interrupt_priority = APP_IRQ_PRIORITY_LOW
     };
@@ -229,15 +229,15 @@ static uint32_t pressure_sensor_init(const nrf_drv_twi_t * p_twi_instance) {
 
     static const nrf_drv_twi_config_t twi_config =
     {
-        .scl                = TWI_SCL,
-        .sda                = TWI_SDA,
+        .scl                = HAT_TWI_SCL,
+        .sda                = HAT_TWI_SDA,
         .frequency          = NRF_TWI_FREQ_400K,
         .interrupt_priority = APP_IRQ_PRIORITY_LOW
     };
 
     init_params.twi_addr                = LPS22HB_ADDR;
 //    init_params.twi_addr                = 0xBA;
-    init_params.pin_int                 = LPS_INT;
+    init_params.pin_int                 = HAT_LPS_INT;
     init_params.p_twi_instance          = p_twi_instance;
     init_params.p_twi_cfg               = &twi_config;
     init_params.evt_handler             = drv_pressure_evt_handler;
@@ -276,8 +276,8 @@ static uint32_t humidity_sensor_init(const nrf_drv_twi_t * p_twi_instance)
 
     static const nrf_drv_twi_config_t twi_config =
     {
-        .scl                = TWI_SCL,
-        .sda                = TWI_SDA,
+        .scl                = HAT_TWI_SCL,
+        .sda                = HAT_TWI_SDA,
         .frequency          = NRF_TWI_FREQ_400K,
         .interrupt_priority = APP_IRQ_PRIORITY_LOW
     };
@@ -285,7 +285,7 @@ static uint32_t humidity_sensor_init(const nrf_drv_twi_t * p_twi_instance)
     drv_humidity_init_t    init_params =
     {
         .twi_addr            = HTS221_ADDR,
-        .pin_int             = HTS_INT,
+        .pin_int             = HAT_HTS_INT,
         .p_twi_instance      = p_twi_instance,
         .p_twi_cfg           = &twi_config,
         .evt_handler         = drv_humidity_evt_handler
@@ -316,8 +316,8 @@ static uint32_t gas_sensor_init(const nrf_drv_twi_t * p_twi_instance)
 
     static const nrf_drv_twi_config_t twi_config =
     {
-        .scl                = TWI_SCL,
-        .sda                = TWI_SDA,
+        .scl                = HAT_TWI_SCL,
+        .sda                = HAT_TWI_SDA,
         .frequency          = NRF_TWI_FREQ_400K,
         .interrupt_priority = APP_IRQ_PRIORITY_LOW
     };

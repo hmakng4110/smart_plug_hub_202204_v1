@@ -29,6 +29,12 @@ include(${PROJECT_LIBRARY_DIR}/nrf5sdk_extension/config/nrf5sdk_extension.cmake)
 
 include(${PROJECT_LIBRARY_DIR}/CSOS_SAAL/config/csos_saal.cmake)
 
+set(_tmp_all_flags "-Wno-error=unused-variable -Wno-error=unused-function -Wno-error=unused-const-variable -Wno-error=unused-but-set-variable -Wno-error=comment -Wno-error=int-conversion -Wno-error=implicit-function-declaration -Wno-error=incompatible-pointer-types -Wno-error=discarded-qualifiers -Wno-error=pointer-sign")
+
+set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${_tmp_all_flags}")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${_tmp_all_flags}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_tmp_all_flags}")
+
 ####
 
 set(INCLUDE__APP TRUE)

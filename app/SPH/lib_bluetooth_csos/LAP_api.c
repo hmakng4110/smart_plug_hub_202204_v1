@@ -256,7 +256,7 @@ void LAP_start_ble_connect(ble_gap_evt_adv_report_t* adv_data)
 	ble_gap_addr_t* target_address = NULL;
 	target_address = (ble_gap_addr_t*) malloc(sizeof(ble_gap_addr_t));
 
-	if(target_address = NULL)
+	if(target_address == NULL)
 	{
 		printf("malloc error : LAP_start_ble_connect\r\n");
 		return;

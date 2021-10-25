@@ -11,6 +11,11 @@
  * https://infocenter.nordicsemi.com/index.jsp?topic=%2Fsdk_nrf5_v17.0.2%2Fhardware_driver_uart.html
  *
  */
+
+#include <ubinos/bsp.h>
+#include <ubinos/bsp/arch.h>
+#include <ubinos/bsp_ubik.h>
+
 #include "sh_uart_433_module.h"
 #include "twi_sensor_module.h"
 #include "ubinos.h"

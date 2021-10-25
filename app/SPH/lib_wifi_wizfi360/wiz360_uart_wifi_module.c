@@ -4,6 +4,11 @@
  *  Created on: 2021. 9. 23.
  *      Author: sayyo, YJPark
  */
+
+#include <ubinos/bsp.h>
+#include <ubinos/bsp/arch.h>
+#include <ubinos/bsp_ubik.h>
+
 #include <stdint.h>
 
 #include "wiz360_uart_wifi_module.h"
@@ -633,6 +638,8 @@ static int wizfi360_connect_AP(char* ssid, uint8_t ssid_len, char* password, uin
 		return WIZFI360_CONN_AP_ERROR_UNKNOWN;
 		break;
 	}
+
+	return WIZFI360_CONN_AP_SUCCESS;
 }
 
 #define WIZFI360_SETUP_MQTT_TIMEOUT 			5000
@@ -1080,6 +1087,8 @@ static int wizfi360_send_mqtt_packet(char* packet, uint8_t packet_len)
 		return WIZFI360_SEND_MQTT_ERROR_UNKNOWN;
 		break;
 	}
+
+	return WIZFI360_SEND_MQTT_SUCCESS;
 }
 
 //parameter... data msg
@@ -1400,6 +1409,8 @@ int setup_wifi_mqtt()
 	task_sleep(WIFI_SETUP_SHORT_DELAY);
 
 	wizfi360_set_time();
+
+	return 0;
 }
 
 static void wizfi360_wifi_processing_task(void * arg) {
@@ -1558,7 +1569,7 @@ static void wizfi360_uart_rx_task(void * arg) {
 				//"OK"
 				if(strcmp(&wizfi360_uart_rsp_buffer[uart_wifi_evt_msg.status][0], "OK\r\n") == 0)
 				{
-					wizfi360_response_event_send((uint8_t) WIZFI360_RSP_EVENT_OK, (uint8_t) NULL, (uint8_t*)NULL);
+					wizfi360_response_event_send((uint8_t) WIZFI360_RSP_EVENT_OK, NULL, (uint8_t*)NULL);
 				}
 				//"ERROR"
 				else if(strcmp(&wizfi360_uart_rsp_buffer[uart_wifi_evt_msg.status][0], "ERROR\r\n") == 0)

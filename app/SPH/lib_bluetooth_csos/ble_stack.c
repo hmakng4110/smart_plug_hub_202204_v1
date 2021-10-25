@@ -336,10 +336,10 @@ void PAAR_scan_start(void){
     ret = nrf_ble_scan_start(&m_scan);
     if(ret != NRF_SUCCESS)
     {
-    	printf("BLE erros : SCAN_fail! %d\r\n", ret);
+    	printf("BLE erros : SCAN_fail! %ld\r\n", ret);
     	temp_test_cnt++;
     }
-    printf("Scan result : %d \r\n", ret);
+    printf("Scan result : %ld \r\n", ret);
 
     APP_ERROR_CHECK(ret);
 
@@ -390,7 +390,7 @@ void PAAR_set_adv_data(uint8_t* adv_data, uint16_t adv_data_len, uint8_t* scan_r
 void PAAR_ble_gap_connect(ble_gap_addr_t * peer_addr){
 	uint32_t r;
 	r = sd_ble_gap_connect(peer_addr, &m_scan_params, &m_connection_param, APP_BLE_CONN_CFG_TAG);
-	printf("connecting result : %d\r\n", r);
+	printf("connecting result : %ld\r\n", r);
 }
 
 /**@brief Function for BLE gap disconnection
@@ -553,7 +553,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt, void * p_context)
 
 			if( p_wpkt->handle == m_ble_paar.tx_handles.cccd_handle && (p_wpkt->len==2) ){
 
-				if( p_wpkt->data[0]&0x01 == 0x01 ){
+				if( (p_wpkt->data[0] & 0x01) == 0x01 ){
 					m_ble_paar.is_notification_enabled = true;
 				}else{
 					m_ble_paar.is_notification_enabled = false;
@@ -585,8 +585,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt, void * p_context)
 			}
 			else
 			{
-				int test_falg;
-				test_falg++;
 			}
 
 			break;
