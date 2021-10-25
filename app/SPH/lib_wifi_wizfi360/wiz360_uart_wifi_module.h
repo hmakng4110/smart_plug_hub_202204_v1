@@ -9,7 +9,7 @@
 #define APP_SH_UART_WIFI_MODULE_SH_UART_WIFI_MODULE_H_
 
 #include "ubinos.h"
-#include "../config/sw_config.h"
+#include <sw_config.h>
 
 #include <stdint.h>
 

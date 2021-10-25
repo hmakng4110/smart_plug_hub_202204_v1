@@ -20,8 +20,8 @@
 
 #include "../lib_433_comm/sh_uart_433_module.h"
 
-#include "../config/sw_config.h"
-#include "../config/hw_config.h"
+#include <sw_config.h>
+#include <hw_config.h>
 
 #ifndef BLE_STACK_HANDLER_SCHED_EVT_SIZE
 #define BLE_STACK_HANDLER_SCHED_EVT_SIZE 0

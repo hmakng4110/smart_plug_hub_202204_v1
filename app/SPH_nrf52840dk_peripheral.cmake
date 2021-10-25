@@ -1,4 +1,4 @@
-# ubinos_config_info {"name_base": "CSOS_SAAL", "build_type": "cmake_ubinos", "app": true}
+# ubinos_config_info {"name_base": "SPH", "build_type": "cmake_ubinos", "app": true}
 
 set_cache(UBINOS__UBIK__TICK_TYPE "RTC" STRING)
 set_cache(UBINOS__UBIK__TICK_PER_SEC 1024 STRING)
@@ -48,7 +48,7 @@ include_directories(${_tmp_source_dir}/arch/arm/cortexm/${_temp_board_model}/${_
 include_directories(${_tmp_source_dir}/arch/arm/cortexm/${_temp_board_model})
 include_directories(${_tmp_source_dir})
 
-include_directories(${_tmp_source_dir}/config)
+include_directories(${_tmp_source_dir}/config/peripheral)
 include_directories(${_tmp_source_dir}/lib_433_comm)
 include_directories(${_tmp_source_dir}/lib_bluetooth_csos)
 include_directories(${_tmp_source_dir}/lib_wifi_wizfi360)

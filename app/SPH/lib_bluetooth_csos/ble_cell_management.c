@@ -19,7 +19,7 @@
 #include "LAP_api.h"
 #include "LAP_main.h"
 
-#include "../config/sw_config.h"
+#include <sw_config.h>
 
 
 #define BLE_CELL_MANAGEMENT_MAX_CONNECTION						6

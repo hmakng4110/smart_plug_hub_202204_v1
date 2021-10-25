@@ -26,8 +26,8 @@
 #include "LAP_api.h"
 #include "LAP_main.h"
 
-#include "../config/hw_config.h"
-#include "../config/sw_config.h"
+#include <hw_config.h>
+#include <sw_config.h>
 
 static msgq_pt BLE_process_msgq;
 

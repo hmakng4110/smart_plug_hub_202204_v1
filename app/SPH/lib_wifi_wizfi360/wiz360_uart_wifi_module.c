@@ -26,8 +26,8 @@
 #include "../lib_bluetooth_csos/LAP_main.h"
 #include "../lib_bluetooth_csos/LAP_api.h"
 
-#include "../config/hw_config.h"
-#include "../config/sw_config.h"
+#include <hw_config.h>
+#include <sw_config.h>
 
 #include "app_error.h"
 
