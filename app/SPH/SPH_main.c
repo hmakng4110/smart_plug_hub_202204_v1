@@ -22,6 +22,8 @@ void SPH_main_task(void* arg){
 
 	ble_stack_init_wait();
 
+	printf("test");
+
 	for (;;) {
 		r = msgq_receive(SPH_msgq, (unsigned char*) &SPH_evt_msg);
 		if (0 != r) {
