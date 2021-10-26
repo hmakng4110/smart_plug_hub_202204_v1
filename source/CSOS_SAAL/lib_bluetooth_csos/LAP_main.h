@@ -5,8 +5,8 @@
  *      Author: YJPark
  */
 
-#ifndef APPLICATION_GASTAG_EXE_GASTAG_SRC_LAP_MAIN_H_
-#define APPLICATION_GASTAG_EXE_GASTAG_SRC_LAP_MAIN_H_
+#ifndef APPLICATION_LIB_BLUETOOTH_CSOS_LAP_MAIN_H_
+#define APPLICATION_LIB_BLUETOOTH_CSOS_LAP_MAIN_H_
 
 typedef struct
 {
@@ -74,4 +74,4 @@ int LAP_event_send(uint8_t evt, uint8_t state, uint16_t conn_handle, uint16_t ha
 
 bool get_test_ble_connected();
 
-#endif /* APPLICATION_GASTAG_EXE_GASTAG_SRC_LAP_MAIN_H_ */
+#endif /* APPLICATION_LIB_BLUETOOTH_CSOS_LAP_MAIN_H_ */

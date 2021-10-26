@@ -123,21 +123,7 @@ static void send_test_msg_peripheral()
 
 static void send_cccd_handle_enable(uint16_t conn_handle, uint16_t cccd_handle)
 {
-	uint8_t* temp_packet =  NULL;
-
-	temp_packet = (uint8_t*)malloc(2);
-
-	if(temp_packet == NULL)
-	{
-		printf("malloc error : send_cccd_handle_enable\r\n");
-		return;
-	}
-	else
-	{
-		printf("malloc send_cccd_handle_enable\r\n");
-	}
-
-	memset(temp_packet, 0, 2);
+	uint8_t* temp_packet[2];
 
 	temp_packet[0] = NRF_NOTI_INDI_ENABLE;		// ble notification msg 데이터
 	temp_packet[1] = 0x00;

@@ -334,6 +334,7 @@ int get_BLE_cell_management_profile_data_by_connhandle(uint16_t connhandle, uuid
 
 	return 0;
 }
+
 int BLE_cell_management_current_cccd_handle(uuidhandle* handle)
 {
 	if(current_connecting_index != 0xFF)
