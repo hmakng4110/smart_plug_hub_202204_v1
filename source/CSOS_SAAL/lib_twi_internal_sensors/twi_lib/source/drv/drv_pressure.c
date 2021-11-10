@@ -36,6 +36,8 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
+
 #include <string.h>
 #include "drv_pressure.h"
 #include "twi_manager.h"
@@ -344,3 +346,4 @@ uint32_t drv_pressure_sleep(void)
     return NRF_SUCCESS;
 }
 
+#endif /*(CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)*/

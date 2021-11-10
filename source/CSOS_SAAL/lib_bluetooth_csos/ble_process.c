@@ -35,70 +35,9 @@ BLE_Ctr_Connection_info Central_conn_info[MAXIMUM_NUM_CENTRAL_CONNECTION];
 
 uint16_t current_conn_handle;
 
-typedef struct {
-	bool scan_target_paar_id_enable;
-	uint8_t scan_target_paar_id[4];
-} scan_target_paar_id_st;
-
-
 uint8_t temp_connectioned = 0;
 
 static scan_target_paar_id_st ble_target_paar_id;
-
-/*
-#define TEST_LOCATION_BEDROOM		1
-#define TEST_LOCATION_LIVINGROOM	2
-
-#define TEST_LOCATION		TEST_LOCATION_BEDROOM
-*/
-
-//#define BLE_TEST_TARGET_NUM		3
-//test_code : connection target...
-static scan_target_paar_id_st ble_test_target_paar_id[TEST_MAX_CONNECTION_DEVICE];
-
-#if(SP_TEST_LOCATION == SP_TEST_LOCATION_BEDROOM)
-uint32_t test_target_paarid[TEST_MAX_CONNECTION_DEVICE] =
-{
-		0x010000E4,
-};
-#elif(SP_TEST_LOCATION == SP_TEST_LOCATION_LIVINGROOM)
-uint32_t test_target_paarid[TEST_MAX_CONNECTION_DEVICE] =
-{
-		0x020000E4,
-};
-#endif
-
-void set_scan_target_paar_id_test()
-{
-	ble_test_target_paar_id[0].scan_target_paar_id_enable = true;
-
-	uint8_t i;
-	for(i = 0; i<TEST_MAX_CONNECTION_DEVICE; i++)
-	{
-		ble_test_target_paar_id[i].scan_target_paar_id[0] = test_target_paarid[i]>>24;
-		ble_test_target_paar_id[i].scan_target_paar_id[1] = test_target_paarid[i]>>16;
-		ble_test_target_paar_id[i].scan_target_paar_id[2] = test_target_paarid[i]>>8;
-		ble_test_target_paar_id[i].scan_target_paar_id[3] = test_target_paarid[i];
-	}
-}
-
-bool is_test_target_device(LAP_ble_adv_report* pPkt)
-{
-	if(pPkt->data_len < LAP_ADV_DATA_LEN)
-		return false;
-
-	uint8_t i;
-	for(i = 0; i<TEST_MAX_CONNECTION_DEVICE; i++)
-	{
-		if( memcmp(&ble_test_target_paar_id[i].scan_target_paar_id[0],&pPkt->data[LAP_ADV_IDX_PAAR_DEVICE_ID0], 4) == 0)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
 
 LAP_ble_adv_report scan_target_result;
 
@@ -194,9 +133,6 @@ static void processing_BLE_Central_Scan_Start(BLEPEvt_msgt BLE_evt_msg)
 	{
 		clear_scan_target_paar_id();
 	}
-
-//	test_ct++;
-//	printf("%d BLE Scan Start.\r\n", test_ct);
 
 	PAAR_scan_start();
 }
@@ -296,65 +232,6 @@ bool is_Target_adv_packet(LAP_ble_adv_report* pPkt)
 LAP_ble_adv_report* PAAR_get_ble_scan_target_result()
 {
 	return &scan_target_result;
-}
-
-//Process Other BLE Events
-//**interrupt에 의해 호출되는 handler이므로 malloc을 사용할수 없음
-void process_ADV_Report(LAP_ble_adv_report* pPkt)
-{
-	//Scan 전 연결 대상을 지정했을 경우, 해당 대상(paar id) 확인 시, Scan 종료 후 LAP Task로 정보 전달(LAP_CENTRAL_ST_SCAN_RESULT)
-	if(ble_target_paar_id.scan_target_paar_id_enable == true)
-	{
-		if(is_Target_adv_packet(pPkt) == false)
-			return;
-
-		memcpy(&scan_target_result, pPkt, sizeof(LAP_ble_adv_report));
-
-		LAP_event_send(LAP_CENTRAL_EVT, LAP_CENTRAL_ST_SCAN_RESULT, BLE_CONN_HANDLE_INVALID,
-												LAP_EVENT_HANDLE_NULL, LAP_EVENT_MSG_LEN_NULL, NULL);
-
-		PAAR_scan_stop();
-	}
-	else
-	{
-
-		//test_code : 연결할 Test 타겟 검사
-		if(is_test_target_device(pPkt) == false)
-			return;
-
-		//연결대상 없이 Advertising Packet 처리
-		//checking PAAR ADV data...
-		if(is_LAP_adv_packet(pPkt) == true)
-		{
-			// Do nothing...
-			//모든 LAP ADV data는 Slim Hub로 전송
-//			FE_send_adv_report(pPkt);
-
-			//process LAP status byte
-			switch(pPkt->data[LAP_ADV_IDX_STATUS])
-			{
-			case LAP_ADV_STATUS_BYTE_LIDX :
-				break;
-			case LAP_ADV_STATUS_BYTE_PNIP :
-				break;
-			case LAP_ADV_STATUS_BYTE_AMD :
-				break;
-			case LAP_ADV_STATUS_BYTE_EC :
-				break;
-			case LAP_ADV_STATUS_BYTE_INOUT :
-				break;
-				//Location Request는 저장 후, Scan Result(timeout evt)이후 처리
-			case LAP_ADV_STATUS_BYTE_LOCATION_REQ :
-					process_LAP_location_request_packet(pPkt);
-				break;
-			case LAP_ADV_STATUS_BYTE_SLIMHUB_INFO :
-				break;
-			case LAP_ADV_STATUS_BYTE_CONN_SOSP_WO_MAC :
-				break;
-			}
-		}
-
-	}
 }
 
 uint32_t BLE_check_disconnect_role()

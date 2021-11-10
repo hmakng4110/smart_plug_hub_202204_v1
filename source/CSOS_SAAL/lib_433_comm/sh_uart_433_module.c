@@ -16,6 +16,8 @@
 #include <ubinos/bsp/arch.h>
 #include <ubinos/bsp_ubik.h>
 
+#if (CSOS_SAAL__USE_LIB_433 == 1)
+
 #include "sh_uart_433_module.h"
 #include "twi_sensor_module.h"
 #include "ubinos.h"
@@ -30,7 +32,7 @@
 
 #include "hw_config.h"
 #include "../lib_bluetooth_csos/ble_stack.h"
-#include "../lib_bluetooth_csos/LAP_main.h"
+//#include "../lib_bluetooth_csos/LAP_main.h"
 #include "../lib_bluetooth_csos/LAP_api.h"
 
 
@@ -135,7 +137,7 @@ static void uart433_data_receive_event_handler(nrf_drv_gpiote_pin_t pin, nrf_gpi
 	if(nrf_drv_gpiote_in_is_set(pin) == false) {
 		//gpio interrupt from atmel7810 uart433 module
 //		uart433_event_send(UART433_MODULE_DATA_RECEIVED_INT, 0, NULL);
-		LED_toggle(PIN_LED1);
+//		LED_toggle(PIN_LED1);
 	}
 }
 
@@ -170,29 +172,32 @@ static void uart433_data_receive_gpio_pin_init(nrf_drv_gpiote_evt_handler_t hand
 	nrf_drv_gpiote_in_event_enable(UART_DATA_SEND_ENABLE_PIN, true);
 	//0406 - should change from [In Event] to [Out Signal] mode
 
-	LED_init();
+//	LED_init();
 }
 
 static void uart433_io_event_handler(nrf_drv_uart_event_t * p_event, void * p_context) {
 
 	uint8_t * buf;
-	uint8_t * buf_throw;
+//	uint8_t * buf_throw;
 	uint32_t len;
-	ret_code_t r;
+
 	nrf_drv_uart_t *uart = &_g_uart433_uart_instance;
 
-	cbuf_pt rbuf = _g_uart433.io_read_buf;
-	cbuf_pt wbuf = _g_uart433.io_write_buf;
-	sem_pt rsem = _g_uart433.io_read_sem;
-	sem_pt wsem = _g_uart433.io_write_sem;
+//	cbuf_pt rbuf = _g_uart433.io_read_buf;
+//	cbuf_pt wbuf = _g_uart433.io_write_buf;
+//	sem_pt rsem = _g_uart433.io_read_sem;
+//	sem_pt wsem = _g_uart433.io_write_sem;
 	char tmp_buf;
-	uint32_t need_signal = 0;
+	
+//	uint32_t need_signal = 0;
 
 	switch(p_event->type) {
 		case NRF_DRV_UART_EVT_ERROR:
-			r = nrf_drv_uart_errorsrc_get(uart);
+		{
+//			ret_code_t r;
+			nrf_drv_uart_errorsrc_get(uart);
 			break;
-
+		}
 		case NRF_DRV_UART_EVT_RX_DONE:
 
 			//0415 전역 변수를 이용해서 출력 가능한 부분
@@ -307,7 +312,7 @@ static uart433_err_t uart433_init(uart433_t * uart433) {
 
 	if(err != UART433_ERR_OK) {
 		if(uart433->cmd_mutex != NULL) {
-			mutex_delete(uart433->cmd_mutex);
+			mutex_delete(&(uart433->cmd_mutex));
 		}
 	}
 
@@ -324,10 +329,10 @@ static void uart433_module_task(void * arg) {
 	task_sleepms(500);
 
 
-	uint8_t byte = '\r';
+	//uint8_t byte = '\r';
 	for(;;) {
 		if(nrf_drv_gpiote_in_is_set(UART_DATA_SEND_ENABLE_PIN) == false) {
-			LED_toggle(PIN_LED4);
+//			LED_toggle(PIN_LED4);
 		}
 		r = msgq_receive(uart433_module_task_msgq_event, (unsigned char*) &uart433_evt_msg);
 		if( r != 0 ) {
@@ -420,6 +425,7 @@ uint32_t u_atoi(char * arr, uint32_t len) {
 }
 
 
+#endif /* (CSOS_SAAL__USE_LIB_433 == 1) */
 
 
 

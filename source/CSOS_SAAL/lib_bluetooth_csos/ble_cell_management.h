@@ -63,4 +63,6 @@ void increase_conn_count();
 
 void decrease_conn_count();
 
+void BLE_cell_management_connect_timeout();
+
 #endif /* APP_BLE_CELL_MANAGEMENT_H_ */

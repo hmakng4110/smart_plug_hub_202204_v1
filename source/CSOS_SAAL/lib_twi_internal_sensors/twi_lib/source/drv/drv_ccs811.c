@@ -36,6 +36,8 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
+
 #include "drv_ccs811.h"
 #include "drv_ccs811_bitfields.h"
 #include "nrf_error.h"
@@ -644,3 +646,5 @@ uint32_t drv_ccs811_close(void)
 
     return ( DRV_CCS811_STATUS_CODE_DISALLOWED );
 }
+
+#endif /*(CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)*/

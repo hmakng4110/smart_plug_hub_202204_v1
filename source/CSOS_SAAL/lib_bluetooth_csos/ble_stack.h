@@ -120,6 +120,8 @@ uint8_t get_ble_write_rsp_flag();
 uint8_t* get_hub_sosp_id();
 
 uint8_t get_adv_buffer_count();
+
+void set_adv_callback_func(void (*callback_func)(LAP_ble_adv_report* pPkt));
 /**********************************************************************************************************************/
 
 #endif /*BLE_H_*/

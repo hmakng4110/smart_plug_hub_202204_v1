@@ -36,6 +36,8 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
+
 #include "drv_gas_sensor.h"
 #include "pca20020.h"
 #include "drv_ext_gpio.h"
@@ -622,3 +624,4 @@ ret_code_t drv_gas_sensor_init(drv_gas_init_t * p_init)
     return NRF_SUCCESS;
 }
 
+#endif /*(CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)*/

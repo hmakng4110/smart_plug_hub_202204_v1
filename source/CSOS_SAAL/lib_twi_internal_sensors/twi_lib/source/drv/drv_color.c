@@ -36,6 +36,8 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
+
 #include "drv_color.h"
 #include "pca20020.h"
 #include "nrf_drv_gpiote.h"
@@ -106,7 +108,7 @@ static void gpiote_evt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t a
 
     if ((pin == BH_INT) && (nrf_gpio_pin_read(BH_INT) == 0))
     {
-//        err_code = app_sched_event_put(0, 0, gpiote_evt_sceduled);
+        err_code = app_sched_event_put(0, 0, gpiote_evt_sceduled);
         APP_ERROR_CHECK(err_code);
     }
 }
@@ -273,3 +275,5 @@ uint32_t drv_color_stop(void)
 
     return drv_bh1745_close();
 }
+
+#endif /*(CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)*/

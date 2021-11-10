@@ -38,6 +38,8 @@
 
 #include "ubinos.h"
 
+#if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
+
 #include "drv_hts221.h"
 #include "twi_manager.h"
 #include "nrf_error.h"
@@ -81,7 +83,7 @@ static struct
 
 static __inline uint32_t twi_open(void)
 {
-    uint32_t err_code;
+//    uint32_t err_code;
 
 //    err_code = twi_manager_request(m_hts221.p_cfg->p_twi_instance,
 //                                   m_hts221.p_cfg->p_twi_config,
@@ -419,3 +421,5 @@ uint32_t drv_hts221_init(void)
 
     return NRF_SUCCESS;
 }
+
+#endif /*(CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)*/

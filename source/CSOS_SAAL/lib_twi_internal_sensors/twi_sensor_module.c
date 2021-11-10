@@ -5,18 +5,25 @@
  *      Author: HMKANG
  */
 
+#include <ubinos/bsp.h>
+#include <ubinos/bsp/arch.h>
+#include <ubinos/bsp_ubik.h>
+
 #include <malloc.h>
 #include "assert.h"
 #include "nordic_common.h"
 
+#if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
+
 #include "nrf_drv_twi.h"
+#include "nrf_drv_gpiote.h"
 #include "twi_include.h"
 
 #include "twi_sensor_module.h"
 
 #include "../lib_bluetooth_csos/ble_stack.h"
-#include "../lib_bluetooth_csos//LAP_main.h"
-#include "../lib_bluetooth_csos//LAP_api.h"
+#include "LAP_main.h"
+#include "../lib_bluetooth_csos/LAP_api.h"
 
 #include "../lib_433_comm/sh_uart_433_module.h"
 
@@ -160,15 +167,15 @@ static void drv_color_data_handler(drv_color_data_t const * p_data)
 
     if (p_data != NULL)
     {
-    	drv_bh1745_data_t data;
+//    	drv_bh1745_data_t data;
         printf("color_data_handler r: %d - g: %d - b: %d - c: %d\r\n", p_data->red,
                                                                        p_data->green,
                                                                        p_data->blue,
                                                                        p_data->clear);
-        data.red   = p_data->red;
-        data.green = p_data->green;
-        data.blue  = p_data->blue;
-        data.clear = p_data->clear;
+//        data.red   = p_data->red;
+//        data.green = p_data->green;
+//        data.blue  = p_data->blue;
+//        data.clear = p_data->clear;
 //        (void)ble_tes_color_set(&m_tes, &data);
     }
 }
@@ -257,7 +264,7 @@ static uint32_t pressure_sensor_init(const nrf_drv_twi_t * p_twi_instance) {
 //////////////////////////////////////////////
 static void drv_humidity_evt_handler(drv_humidity_evt_t event)
 {
-    uint32_t err;
+    //uint32_t err;
 
     if (event == DRV_HUMIDITY_EVT_DATA)
     {
@@ -267,7 +274,7 @@ static void drv_humidity_evt_handler(drv_humidity_evt_t event)
     else
     {
     	//
-    	err = 0;
+    	//err = 0;
     }
 }
 static uint32_t humidity_sensor_init(const nrf_drv_twi_t * p_twi_instance)
@@ -396,7 +403,7 @@ static uint32_t sh_environment_disable() {
 static float sh_pressure_get(void) {
 	ret_code_t err = 0;
 	float data_pressure;
-	float data_temperature;
+//	float data_temperature;
 
 //	err = drv_pressure_enable();
 	assert(err == 0);
@@ -404,7 +411,7 @@ static float sh_pressure_get(void) {
 	assert(err == 0);
 
 	data_pressure = drv_pressure_get();
-	data_temperature = drv_pressure_temperature_get();
+//	data_temperature = drv_pressure_temperature_get();
 
 //	err = drv_pressure_disable();
 	assert(err == 0);
@@ -505,7 +512,7 @@ static uint32_t twi433_ble_request_handler(uint8_t request_type) {
 
 static void twi433_module_task(void * arg) {
 	ret_code_t err;
-	twi433_msgq_event_t twi433_evt_msg;
+//	twi433_msgq_event_t twi433_evt_msg;
 	twi433_sensor_data_t tmp_data;
 
 	ble_stack_init_wait();
@@ -628,3 +635,5 @@ int twi433_event_send(uint8_t evt, uint8_t state, uint8_t * msg) {
 
 	return msgq_send(twi433_module_task_msgq, (unsigned char * ) &tmp_twi433_msgq_event);
 }
+
+#endif /*(CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)*/

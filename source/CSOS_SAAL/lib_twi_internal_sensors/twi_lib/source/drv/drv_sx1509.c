@@ -36,6 +36,8 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
+
 #include <drv_sx1509.h>
 #include "twi_manager.h"
 #include "nrf_delay.h"
@@ -1238,3 +1240,5 @@ uint32_t drv_sx1509_close(void)
 
     return ( DRV_SX1509_STATUS_CODE_DISALLOWED );
 }
+
+#endif /*(CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)*/

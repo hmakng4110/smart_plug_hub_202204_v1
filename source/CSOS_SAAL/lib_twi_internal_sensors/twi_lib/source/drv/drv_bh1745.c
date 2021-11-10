@@ -36,6 +36,8 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
+
 #include "drv_bh1745.h"
 #include "twi_manager.h"
 #include "nrf_error.h"
@@ -77,7 +79,7 @@ static struct
  */
 static __inline uint32_t twi_open(void)
 {
-    uint32_t err_code;
+//    uint32_t err_code;
 
 //    err_code = twi_manager_request(m_bh1745.p_cfg->p_twi_instance,
 //                                   m_bh1745.p_cfg->p_twi_cfg,
@@ -448,3 +450,5 @@ uint32_t drv_bh1745_threshold_set(drv_bh1745_threshold_t const * p_th)
 
     return NRF_SUCCESS;
 }
+
+#endif /*(CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)*/

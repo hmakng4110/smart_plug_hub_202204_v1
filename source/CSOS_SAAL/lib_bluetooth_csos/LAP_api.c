@@ -7,10 +7,10 @@
 
 #include <lib_bluetooth_csos/ble_process.h>
 #include <lib_bluetooth_csos/ble_profile.h>
-#include <lib_bluetooth_csos/ble_profile.h>
+#include <lib_bluetooth_csos/ble_cell_management.h>
 #include <lib_bluetooth_csos/ble_stack.h>
 #include <lib_bluetooth_csos/LAP_api.h>
-#include <lib_bluetooth_csos/LAP_main.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>

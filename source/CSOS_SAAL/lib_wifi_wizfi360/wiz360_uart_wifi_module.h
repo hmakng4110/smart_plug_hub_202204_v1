@@ -95,6 +95,8 @@ enum{
 	WIZFI360_RSP_EVENT_LINK_IS_NOT_VAILD,
 };
 
+#define MQTT_RESET_MAX_COUNT	3
+
 void uart_wifi_module_task_init(void);
 
 void set_test_time(uint8_t YY, uint8_t MM, uint8_t DD, uint8_t hh, uint8_t mm, uint8_t ss);

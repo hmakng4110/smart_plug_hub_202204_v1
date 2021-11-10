@@ -39,7 +39,6 @@
 #include "ble_stack.h"
 #include "LAP_api.h"
 #include "LAP_main.h"
-#include "SPH_main.h"
 
 #include <sw_config.h>
 #include <hw_config.h>
@@ -126,6 +125,16 @@ uint8_t temp_adv_buffer_count = 0;
 
 LAP_ble_adv_report temp_adv_buffer[MAX_SIZE_TEMP_ADV_BUFFER];
 
+typedef void (*ble_adv_report_handler)(LAP_ble_adv_report* pPkt);
+
+ble_adv_report_handler callback_adv_report = NULL;
+
+//void *callback_adv_report(LAP_ble_adv_report* pPkt);
+
+void set_adv_callback_func(void (*callback_func)(LAP_ble_adv_report* pPkt))
+{
+	callback_adv_report = callback_func;
+}
 
 uint8_t get_adv_buffer_count()
 {
@@ -170,7 +179,7 @@ static void ble_stack_init(void) {
 	APP_ERROR_CHECK(err_code);
 
 	// Register a handler for BLE events.
-	NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, on_ble_evt, NULL);
+	NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, (void*) on_ble_evt, NULL);
 
 }
 
@@ -792,7 +801,11 @@ void ble_stack_task(void * arg) {
 				break;
 			case BLE_STACK_PERIPHERAL_ADV_EVT :
 			{
-				process_ADV_Report(&temp_adv_buffer[ble_rx_msg_buffer.msg[TEMP_ADV_MSG_INDEX]]);
+				if(callback_adv_report !=NULL)
+				{
+					callback_adv_report(&temp_adv_buffer[ble_rx_msg_buffer.msg[TEMP_ADV_MSG_INDEX]]);
+				}
+				//process_ADV_Report(&temp_adv_buffer[ble_rx_msg_buffer.msg[TEMP_ADV_MSG_INDEX]]);
 				memset(&temp_adv_buffer[ble_rx_msg_buffer.msg[TEMP_ADV_MSG_INDEX]], 0, sizeof(LAP_ble_adv_report));
 				temp_adv_buffer_count--;
 			}

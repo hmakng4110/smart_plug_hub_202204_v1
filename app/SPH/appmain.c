@@ -12,12 +12,11 @@
 #include "nrf52840_bitfields.h"
 */
 
-#include "lib_bluetooth_csos/ble_process.h"
-#include "lib_bluetooth_csos/ble_profile.h"
-#include "lib_bluetooth_csos/ble_stack.h"
-#include "lib_bluetooth_csos/LAP_main.h"
-#include "lib_bluetooth_csos/LAP_api.h"
-//#include "lib_bluetooth_csos/SPH_main.h"
+#include <lib_bluetooth_csos/ble_process.h>
+#include <lib_bluetooth_csos/ble_profile.h>
+#include <lib_bluetooth_csos/ble_stack.h>
+#include <lib_bluetooth_csos/LAP_api.h>
+#include "LAP_main.h"
 
 #include "twi_sensor_module.h"
 
@@ -53,7 +52,9 @@ int appmain(int argc, char *argv[]) {
 
 	LAP_main_task_init();
 
-	//uart_wifi_module_task_init();
+#if(SP_SW_MODE_SETUP == SP_SW_MODE_SPH)
+	uart_wifi_module_task_init();
+#endif
 
 	ubik_comp_start();
 

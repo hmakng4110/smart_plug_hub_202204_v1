@@ -16,9 +16,9 @@
 //software mode = Smart Plug Hub
 #define SP_SW_MODE_SPH						0
 #define SP_SW_MODE_TEST_CENTRAL				1
-#define SP_SW_MODE_TEST_PERIPHRAL			2
+#define SP_SW_MODE_TEST_PERIPHERAL			2
 
-#define SP_SW_MODE_SETUP					SP_SW_MODE_TEST_PERIPHRAL
+#define SP_SW_MODE_SETUP					SP_SW_MODE_TEST_PERIPHERAL
 
 
 //Test code : Demo

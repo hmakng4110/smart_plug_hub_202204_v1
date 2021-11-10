@@ -81,17 +81,19 @@ enum
 	BLE_DICONNECT_ROLE_ERROR
 };
 
+typedef struct {
+	bool scan_target_paar_id_enable;
+	uint8_t scan_target_paar_id[4];
+} scan_target_paar_id_st;
+
+
 void BLE_process_task_init(void);
 
 void BLE_process_event_send(uint8_t event, uint8_t status, uint16_t conn_handle,
 									uint16_t handle, uint32_t msg_len, uint8_t* msg);
 
-void process_ADV_Report(LAP_ble_adv_report* pPkt);
-
 uint32_t BLE_check_disconnect_role();
 
 LAP_ble_adv_report* PAAR_get_ble_scan_target_result();
-
-void set_scan_target_paar_id_test();
 
 #endif /* APPLICATION_PAAR_FRONTEND_EXE_PAAR_FRONTEND_SRC_BLE_PROCESS_H_ */

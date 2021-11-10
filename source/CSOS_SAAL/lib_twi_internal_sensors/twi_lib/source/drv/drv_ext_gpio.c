@@ -36,6 +36,8 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
+
 #include "drv_ext_gpio.h"
 #include <stdint.h>
 #include "drv_sx1509.h"
@@ -655,3 +657,5 @@ uint32_t drv_ext_gpio_init(drv_ext_gpio_init_t const * const p_init, bool on_ini
 
     return DRV_EXT_GPIO_STATUS_CODE_SUCCESS;
 }
+
+#endif /*(CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)*/

@@ -110,7 +110,7 @@ uint8_t* BLE_cell_management_search_paar_id_by_connhandle(uint16_t connhandle)
 		{
 			if(BLE_cell_management_data[i].is_empty == false)
 			{
-				return &(BLE_cell_management_data[i].paarID);
+				return (uint8_t*)&(BLE_cell_management_data[i].paarID);
 			}
 		}
 	}
@@ -123,7 +123,7 @@ uint8_t* BLE_cell_management_get_PAAR_ID_by_index(uint8_t index)
 {
 	if(BLE_cell_management_data[index].is_empty == false)
 	{
-		return &(BLE_cell_management_data[index].paarID);
+		return (uint8_t*)&(BLE_cell_management_data[index].paarID);
 	}
 	return NULL;
 }

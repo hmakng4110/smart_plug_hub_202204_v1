@@ -36,6 +36,8 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
+
 #include "drv_lps22hb.h"
 #include "twi_manager.h"
 #include "nrf_error.h"
@@ -76,7 +78,7 @@ static struct
 
 static __inline uint32_t twi_open(void)
 {
-    uint32_t err_code;
+//    uint32_t err_code;
 
 //    err_code = twi_manager_request(m_lps22hb.p_cfg->p_twi_instance,
 //                                   m_lps22hb.p_cfg->p_twi_cfg,
@@ -580,3 +582,5 @@ uint32_t drv_lps22hb_init(void)
 
     return NRF_SUCCESS;
 }
+
+#endif /*(CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)*/
