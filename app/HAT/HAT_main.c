@@ -125,7 +125,7 @@ void app_tick_handler(void* p_context){
 
 }
 
-void BLE_send_res(uint8_t App_ID, uint8_t Act_ON, uint8_t Act_LVL)
+void BLE_send_result(uint8_t App_ID, uint8_t Act_ON, uint8_t Act_LVL)
 {
 	uint8_t temp_packet[PAAR_MAXIMUM_PACKET_SIZE] = {0, };
 
@@ -248,7 +248,7 @@ void HAT_main_task(void* arg){
 					if(current_state != ovr)
 					{
 						/* App ID + ON/OFF + LVL */
-						BLE_send_res(Appliance_ID, ovr, lvl);
+						BLE_send_result(Appliance_ID, ovr, lvl);
 						LED_toggle(PIN_LED2);
 					}
 					current_state = ovr;

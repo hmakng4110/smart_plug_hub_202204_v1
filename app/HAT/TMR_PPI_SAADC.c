@@ -9,7 +9,7 @@
 #include "TMR_PPI_SAADC.h"
 #include "nrf_drv_ppi.h"
 #include "LAP_main.h"
-
+#include "nrf_drv_saadc.h"
 
 
 static nrf_saadc_value_t       m_buffer_pool[BUFFER_CNT_IN_USE][SAMPLES_IN_BUFFER];		// Two buffers receiving ADC data - each buffer contains SAMPLES_IN_BUFFER data.

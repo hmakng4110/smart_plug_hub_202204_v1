@@ -354,7 +354,7 @@ static void copy_test_time(char* data, uint8_t YY, uint8_t MM, uint8_t DD, uint8
 	strcat(data,temp_time);
 }
 
-#define WIZFI360_RESET_MODULE_TIMEOUT	5000
+#define WIZFI360_RESET_MODULE_TIMEOUT	10000
 
 #define WIZFI360_RESET_MODULE_SUCCESS			0
 #define WIZFI360_RESET_MODULE_ERROR_ERROR		-1
@@ -410,7 +410,7 @@ static int wizfi360_reset_module()
 #define WIZFI360_MODE_STATION	1
 #define WIZFI360_MODE_SOFTAP	2
 #define WIZFI360_MODE_ST_SOFTAP	3
-#define WIZFI360_SET_MODE_TIMEOUT	5000
+#define WIZFI360_SET_MODE_TIMEOUT	10000
 
 #define WIZFI360_SET_MODE_SUCCESS			0
 #define WIZFI360_SET_MODE_ERROR_ERROR		-1
@@ -671,7 +671,7 @@ static int wizfi360_connect_AP(char* ssid, uint8_t ssid_len, char* password, uin
 	return WIZFI360_CONN_AP_SUCCESS;
 }
 
-#define WIZFI360_SETUP_MQTT_TIMEOUT 			5000
+#define WIZFI360_SETUP_MQTT_TIMEOUT 			10000
 
 #define WIZFI360_SETUP_MQTT_SUCCESS				0
 #define WIZFI360_SETUP_MQTT_ERROR_ERROR			-1
@@ -761,7 +761,7 @@ static int wizfi360_setup_MQTT(char* user_name, uint8_t user_name_len, char* use
 	}
 }
 
-#define WIZFI360_SETUP_SNTP_TIMEOUT 			5000
+#define WIZFI360_SETUP_SNTP_TIMEOUT 			10000
 
 #define WIZFI360_SETUP_SNTP_SUCCESS				0
 #define WIZFI360_SETUP_SNTP_ERROR_ERROR			-1
@@ -820,7 +820,7 @@ static int wizfi360_setup_SNTP()
 	}
 }
 
-#define WIZFI360_SETUP_SNTP_TIME_TIMEOUT 		5000
+#define WIZFI360_SETUP_SNTP_TIME_TIMEOUT 		10000
 
 #define WIZFI360_SETUP_SNTP_TIME_SUCCESS				0
 #define WIZFI360_SETUP_SNTP_TIME_ERROR_ERROR			-1
@@ -881,7 +881,7 @@ static int wizfi360_set_time()
 	}
 }
 
-#define WIZFI360_SETUP_MQTT_TOPIC_TIMEOUT 			5000
+#define WIZFI360_SETUP_MQTT_TOPIC_TIMEOUT 			10000
 
 #define WIZFI360_SETUP_MQTT_TOPIC_SUCCESS				0
 #define WIZFI360_SETUP_MQTT_TOPIC_ERROR_ERROR			-1
@@ -960,7 +960,7 @@ static int wizfi360_setup_MQTT_topic(char* publish_topic, uint8_t publish_topic_
 	}
 }
 
-#define WIZFI360_CONN_MQTT_TIMEOUT 			10000
+#define WIZFI360_CONN_MQTT_TIMEOUT 			20000
 
 #define WIZFI360_CONN_MQTT_SUCCESS				0
 #define WIZFI360_CONN_MQTT_ERROR_ERROR			-1
@@ -1043,7 +1043,7 @@ static int wizfi360_conn_MQTT(bool authentication, char* broker_ip, uint8_t brok
 	}
 }
 
-#define WIZFI360_SEND_MQTT_TIMEOUT 			10000
+#define WIZFI360_SEND_MQTT_TIMEOUT 			20000
 
 #define WIZFI360_SEND_MQTT_SUCCESS				0
 #define WIZFI360_SEND_MQTT_ERROR_ERROR			-1
@@ -1339,6 +1339,8 @@ int setup_wifi_mqtt()
 		return WIFI_SETUP_ERROR_RESET;
 	}
 
+	task_sleep(1000);
+
 	err = wizfi360_set_mode(WIZFI360_MODE_STATION);
 	if(err != WIZFI360_SET_MODE_SUCCESS)
 	{
@@ -1346,12 +1348,16 @@ int setup_wifi_mqtt()
 		return WIFI_SETUP_ERROR_RESET;
 	}
 
+	task_sleep(1000);
+
 	err = wizfi360_enable_DHCP(WIZFI360_DHCP_MODE_STATION, WIZFI360_DHCP_ENABLE);
 	if(err != WIZFI360_SET_DHCP_SUCCESS)
 	{
 		printf("Error : setup wifi, enalbe DHCP. \r\n");
 		return WIFI_SETUP_ERROR_RESET;
 	}
+
+	task_sleep(1000);
 
 	err = wizfi360_setup_SNTP();
 	if(err != WIZFI360_SETUP_SNTP_SUCCESS)
@@ -1369,6 +1375,8 @@ int setup_wifi_mqtt()
 
 	password_len = strlen(TEST_AP_PASSWORD);
 	strcpy(AP_password, TEST_AP_PASSWORD);
+
+	task_sleep(1000);
 
 	err = wizfi360_connect_AP(AP_ssid, ssid_len, AP_password, password_len);
 	switch(err)
@@ -1567,7 +1575,7 @@ static void wizfi360_uart_rx_task(void * arg) {
 				//"FAIL"
 				else if(strcmp(&wizfi360_uart_rsp_buffer[uart_wifi_evt_msg.status][0], "FAIL\r\n") == 0)
 				{
-					wizfi360_response_event_send(WIZFI360_RSP_EVENT_ERROR, 0, (uint8_t*)NULL);
+					wizfi360_response_event_send(WIZFI360_RSP_EVENT_FAIL, 0, (uint8_t*)NULL);
 				}
 				//"SEND OK"
 				else if(strcmp(&wizfi360_uart_rsp_buffer[uart_wifi_evt_msg.status][0], "SEND OK\r\n") == 0)
@@ -1689,9 +1697,11 @@ static void wizfi360_uart_rx_task(void * arg) {
 
 
 					set_test_time( YY, MM, DD, hh, mm, ss);
+
+					wizfi360_response_event_send(WIZFI360_RSP_EVENT_SNTP_TIME, 0, (uint8_t*)NULL);
 				}
 
-				wizfi360_response_event_send(WIZFI360_RSP_EVENT_SNTP_TIME, 0, (uint8_t*)NULL);
+				
 
 				memset(&wizfi360_uart_rsp_buffer[uart_wifi_evt_msg.status][0], 0, UART_WIFI_RSP_BUF_SIZE);
 				break;

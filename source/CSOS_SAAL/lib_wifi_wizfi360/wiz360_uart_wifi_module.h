@@ -25,8 +25,8 @@
 
 //#define TEST_AP_SSID		"CSOS_AP"
 //#define TEST_AP_PASSWORD	"csoscsos"
-#define TEST_AP_SSID		"LGU+"
-#define TEST_AP_PASSWORD	"lguplus100"
+#define TEST_AP_SSID		"AP_DEMO"
+#define TEST_AP_PASSWORD	"csos!1234"
 
 #if(SP_TEST_LOCATION == SP_TEST_LOCATION_BEDROOM)
 #define TEST_MQTT_CLIENT_ID		"test1_bedroom"

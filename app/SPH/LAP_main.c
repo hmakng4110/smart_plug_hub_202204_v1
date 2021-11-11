@@ -37,7 +37,7 @@ static scan_target_paar_id_st ble_test_target_paar_id[TEST_MAX_CONNECTION_DEVICE
 #if(SP_SW_MODE_SETUP == SP_SW_MODE_TEST_PERIPHERAL || SP_SW_MODE_SETUP == SP_SW_MODE_TEST_CENTRAL )
 uint32_t target_paarid[TEST_MAX_CONNECTION_DEVICE] =
 {
-		0x010000E4,
+		0x030000D4,
 };
 #elif(SP_SW_MODE_SETUP == SP_SW_MODE_SPH)
 uint32_t target_paarid[TEST_MAX_CONNECTION_DEVICE] =
