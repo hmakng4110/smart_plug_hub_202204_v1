@@ -178,12 +178,14 @@ static uint32_t wizfi360_io_pins_init(void) {
 	ret_code_t err = NRF_SUCCESS;
 
 	nrf_gpio_cfg_output(WIZFI_RST);
-
 	nrf_gpio_cfg_output(WIZFI_WAKE_UP);
 
-	nrf_gpio_pin_clear(WIZFI_RST);
+	nrf_gpio_pin_set(WIZFI_WAKE_UP);
 
-	nrf_gpio_pin_clear(WIZFI_WAKE_UP);
+	nrf_gpio_pin_clear(WIZFI_RST);
+	nrf_delay_ms(500);
+	nrf_gpio_pin_set(WIZFI_RST);
+	nrf_delay_ms(500);
 
 	return err;
 }
