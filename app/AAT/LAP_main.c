@@ -288,7 +288,7 @@ static void processing_LAP_Central_Data_Received(LAPEvt_msgt LAP_evt_msg)
 
 	memcpy(&mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA], &LAP_evt_msg.msg[PAAR_PACKET_HEADER_LEN], body_data_len);
 
-	wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT, 0, mqtt_msg);
+	//wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT, 0, mqtt_msg);
 
 #endif
 }
@@ -448,7 +448,7 @@ void process_ADV_Report(LAP_ble_adv_report* pPkt)
 void LAP_Protocol_start_operation()
 {
 	set_adv_callback_func(process_ADV_Report);
-
+/*
 #if(SP_SW_MODE_SETUP == SP_SW_MODE_SPH)
 	set_scan_target_paar_id_test();
 
@@ -478,6 +478,7 @@ void LAP_Protocol_start_operation()
 	task_sleep(TEST_ADV_START_DELAY);
 	LAP_start_ble_adv_LIDx();
 #endif
+*/
 }
 
 void scan_fail_timer_handler()

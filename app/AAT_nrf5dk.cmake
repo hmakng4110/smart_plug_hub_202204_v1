@@ -17,14 +17,12 @@ set_cache(SEGGERRTT__DTTY_ENABLE TRUE BOOL)
 
 set_cache(NRF5SDK__UART_ENABLED TRUE BOOL)
 set_cache(NRF5SDK__NRFX_UARTE0_ENABLED TRUE BOOL)
-set_cache(NRF5SDK__NRFX_UARTE1_ENABLED TRUE BOOL)
-set_cache(NRF5SDK__TWI_ENABLED TRUE BOOL)
 
 set_cache(UBINOS__UBIK__MSGQ_MSGSIZE_MAX 32 STRING)
 
-set_cache(CSOS_SAAL__USE_LIB_433 TRUE BOOL)
-set_cache(CSOS_SAAL__USE_LIB_twi_internal_sensors TRUE BOOL)
-set_cache(CSOS_SAAL__USE_LIB_wifi_wizfi360 TRUE BOOL)
+set_cache(CSOS_SAAL__USE_LIB_433 FALSE BOOL)
+set_cache(CSOS_SAAL__USE_LIB_twi_internal_sensors FALSE BOOL)
+set_cache(CSOS_SAAL__USE_LIB_wifi_wizfi360 FALSE BOOL)
 
 include(${PROJECT_UBINOS_DIR}/config/ubinos_nrf52dk_softdevice.cmake)
 include(${PROJECT_LIBRARY_DIR}/seggerrtt_wrapper/config/seggerrtt.cmake)
