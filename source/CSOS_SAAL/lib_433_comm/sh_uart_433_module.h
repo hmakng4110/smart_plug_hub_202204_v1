@@ -11,6 +11,8 @@
 #include "ubinos.h"
 #include <sw_config.h>
 
+#if (CSOS_SAAL__USE_LIB_433 == 1)
+
 #include <stdint.h>
 #include "nrf_gpio.h"
 
@@ -106,5 +108,6 @@ void uart433_module_task_init(void);
 
 uint32_t u_atoi(char * arr, uint32_t len);
 
+#endif /*(CSOS_SAAL__USE_LIB_433 == 1)*/
 
 #endif /* APP_SH_UART_433_MODULE_SH_UART_433_MODULE_H_ */

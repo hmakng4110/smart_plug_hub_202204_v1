@@ -15,7 +15,7 @@
 
 #include "ble_gap.h"
 #include "ble.h"
-#include <sw_config.h>
+#include "sw_config.h"
 
 #define PAAR_ID_SIZE	4
 #define PAAR_SERVICE_ID_SIZE	1

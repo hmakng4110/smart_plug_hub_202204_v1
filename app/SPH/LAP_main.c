@@ -37,14 +37,13 @@ static scan_target_paar_id_st ble_test_target_paar_id[TEST_MAX_CONNECTION_DEVICE
 #if(SP_SW_MODE_SETUP == SP_SW_MODE_TEST_PERIPHERAL || SP_SW_MODE_SETUP == SP_SW_MODE_TEST_CENTRAL )
 uint32_t target_paarid[TEST_MAX_CONNECTION_DEVICE] =
 {
-		0x010000E4,
+		0x020000E0,
 };
 #elif(SP_SW_MODE_SETUP == SP_SW_MODE_SPH)
 uint32_t target_paarid[TEST_MAX_CONNECTION_DEVICE] =
 {
-		0x010000E4,
-		0x020000E4,
-		0x030000E4
+		0x090001E0,
+		0x030001D8,
 };
 #endif
 
@@ -90,8 +89,6 @@ static void process_LAP_scan_timeout()
 	r = processing_BLE_cell_managemnet();
 	printf("BLE Cell Management\r\n");
 
-	task_sleep(200);
-
 	if(r == 0xFF)
 	{
 		printf("BLE event : Connecting...\r\n");
@@ -99,7 +96,11 @@ static void process_LAP_scan_timeout()
 	else
 	{
 		if(get_BLE_cell_management_data_count() < TEST_MAX_CONNECTION_DEVICE)
+		{
+			task_sleep(1000);
 			LAP_start_ble_scan(NULL);
+		}
+			
 	}
 
 	//app_timer_stop(scan_fail_timeout_timer);
@@ -112,6 +113,8 @@ static void processing_LAP_Central_Conn_timeout(LAPEvt_msgt LAP_evt_msg)
 	printf("LAP Connect timeout \r\n");
 	BLE_cell_management_connect_timeout();
 
+	task_sleep(1000);
+	
 	LAP_start_ble_scan(NULL);
 
 	//app_timer_stop(scan_fail_timeout_timer);

@@ -17,11 +17,7 @@
 #include "lib_bluetooth_csos/ble_stack.h"
 #include "lib_bluetooth_csos/LAP_api.h"
 #include "LAP_main.h"
-//#include "lib_bluetooth_csos/SPH_main.h"
-
-#include "twi_sensor_module.h"
-
-#include "lib_433_comm/sh_uart_433_module.h"
+#include "AAT_main.h"
 
 int appmain(int argc, char *argv[]) {
 
@@ -53,9 +49,7 @@ int appmain(int argc, char *argv[]) {
 
 	LAP_main_task_init();
 
-#if(SP_SW_MODE_SETUP == SP_SW_MODE_SPH)
-	//uart_wifi_module_task_init();
-#endif
+	AAT_main_task_init();
 
 	ubik_comp_start();
 

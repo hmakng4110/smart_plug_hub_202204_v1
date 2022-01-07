@@ -56,6 +56,9 @@ int appmain(int argc, char *argv[]) {
 	uart_wifi_module_task_init();
 #endif
 
+	//test code
+	twi433_module_task_init();
+
 	ubik_comp_start();
 
 	return 0;

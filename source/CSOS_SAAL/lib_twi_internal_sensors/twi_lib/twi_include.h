@@ -20,6 +20,7 @@
 #include "drv_color.h"
 #include "drv_ccs811.h"
 #include "drv_gas_sensor.h"
+#include "grid_eye/drv_grid_eye.h"
 
 //macros
 #include "macros_common.h"

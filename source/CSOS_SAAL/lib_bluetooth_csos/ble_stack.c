@@ -48,13 +48,14 @@ typedef struct
 	uint8_t evt;
 	uint16_t conn_handle;
 	uint8_t len;
-	uint8_t msg[PAAR_MAXIMUM_PACKET_SIZE];
+	uint8_t buffer_index;
 }ble_rx_msgt;
 
 static msgq_pt ble_rx_msgq;
 
 #define APP_ADV_DURATION                BLE_GAP_ADV_TIMEOUT_GENERAL_UNLIMITED   /**< The advertising time-out (in units of seconds). When set to 0, we will never time out. */
-#define APP_ADV_INTERVAL                64                                      /**< The advertising interval (in units of 0.625 ms; this value corresponds to 40 ms). */
+//800 * 0.625 = 500 ms
+#define APP_ADV_INTERVAL                800                                      /**< The advertising interval (in units of 0.625 ms; this value corresponds to 40 ms). */
 
 static uint8_t m_adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET;                   /**< Advertising handle used to identify an advertising set. */
 
@@ -97,7 +98,7 @@ NRF_BLE_GATT_DEF(m_gatt);                                                   /**<
 #define APP_BLE_OBSERVER_PRIO           3                                       /**< Application's BLE observer priority. You shouldn't need to modify this value. */
 #define APP_BLE_CONN_CFG_TAG            1                                       /**< A tag identifying the SoftDevice BLE configuration. */
 
-#define BLE_SEND_MSG_COMPLETE_DELAY 100
+#define BLE_SEND_MSG_COMPLETE_DELAY 1000
 
 static ble_paar_t 	m_ble_paar;
 static sem_pt 		_ble_evt_sem;
@@ -117,13 +118,22 @@ ble_rx_msgt temp_ble_cent_rx_buf;
 ble_rx_msgt temp_ble_periph_buf;
 ble_rx_msgt temp_ble_periph_adv_buf;
 
-#define MAX_SIZE_TEMP_ADV_BUFFER	30
-#define TEMP_ADV_MSG_INDEX			0
+#define MAX_SIZE_TEMP_ADV_BUFFER			30
+#define MAX_SIZE_TEMP_CENTRAL_BUFFER		3
+#define MAX_SIZE_TEMP_PERIPHRAL_BUFFER		3
 
-uint8_t temp_adv_buffer_index = 0;
-uint8_t temp_adv_buffer_count = 0;
+uint8_t LAP_adv_buffer_index = 0;
+uint8_t LAP_adv_buffer_count = 0;
+
+uint8_t LAP_cent_rx_buffer_index = 0;
+uint8_t LAP_cent_rx_buffer_count = 0;
+
+uint8_t LAP_periph_rx_buffer_index = 0;
+uint8_t LAP_periph_rx_buffer_count = 0;
 
 LAP_ble_adv_report temp_adv_buffer[MAX_SIZE_TEMP_ADV_BUFFER];
+LAP_ble_central_packet temp_central_rx_buffer[MAX_SIZE_TEMP_CENTRAL_BUFFER];
+LAP_ble_peripheral_packet temp_periphral_rx_buffer[MAX_SIZE_TEMP_PERIPHRAL_BUFFER];
 
 typedef void (*ble_adv_report_handler)(LAP_ble_adv_report* pPkt);
 
@@ -138,7 +148,7 @@ void set_adv_callback_func(void (*callback_func)(LAP_ble_adv_report* pPkt))
 
 uint8_t get_adv_buffer_count()
 {
-	return temp_adv_buffer_count;
+	return LAP_adv_buffer_count;
 }
 
 static void ble_stack_init(void);
@@ -288,6 +298,7 @@ uint32_t ble_send_central_data(const uint16_t m_conn_handle, uint16_t tx_handler
 	        .len      = length,
 	        .p_value  = pbuf
 	};
+
 
 	send_data_state_err = sd_ble_gattc_write(m_conn_handle, &write_params);
 
@@ -484,35 +495,36 @@ static void on_ble_evt(ble_evt_t * p_ble_evt, void * p_context)
 			temp_ble_periph_adv_buf.evt = BLE_STACK_PERIPHERAL_ADV_EVT;
 			temp_ble_periph_adv_buf.conn_handle = BLE_CONN_HANDLE_INVALID;
 
-			if(temp_adv_buffer_count < MAX_SIZE_TEMP_ADV_BUFFER)
+			if(LAP_adv_buffer_count < MAX_SIZE_TEMP_ADV_BUFFER)
 			{
 
-				memcpy(&temp_adv_buffer[temp_adv_buffer_index].rssi, &pPkt->rssi, sizeof(int8_t));
+				memcpy(&temp_adv_buffer[LAP_adv_buffer_index].rssi, &pPkt->rssi, sizeof(int8_t));
 
-				memcpy(&temp_adv_buffer[temp_adv_buffer_index].peer_address, &pPkt->peer_addr, sizeof(ble_gap_addr_t));
+				memcpy(&temp_adv_buffer[LAP_adv_buffer_index].peer_address, &pPkt->peer_addr, sizeof(ble_gap_addr_t));
 
-				memcpy(&temp_adv_buffer[temp_adv_buffer_index].direct_address, &pPkt->direct_addr, sizeof(ble_gap_addr_t));
+				memcpy(&temp_adv_buffer[LAP_adv_buffer_index].direct_address, &pPkt->direct_addr, sizeof(ble_gap_addr_t));
 
-				memcpy(&temp_adv_buffer[temp_adv_buffer_index].data_len, &pPkt->data.len, sizeof(uint16_t));
+				memcpy(&temp_adv_buffer[LAP_adv_buffer_index].data_len, &pPkt->data.len, sizeof(uint16_t));
 
-				if(temp_adv_buffer[temp_adv_buffer_index].data_len != LAP_ADV_DATA_LEN)
+				if(temp_adv_buffer[LAP_adv_buffer_index].data_len != LAP_ADV_DATA_LEN)
 				{
 					return;
 				}
 
-				memcpy(&temp_adv_buffer[temp_adv_buffer_index].data, pPkt->data.p_data, LAP_ADV_DATA_LEN);
+				memcpy(&temp_adv_buffer[LAP_adv_buffer_index].data, pPkt->data.p_data, LAP_ADV_DATA_LEN);
 
-				temp_ble_periph_adv_buf.msg[TEMP_ADV_MSG_INDEX] =  temp_adv_buffer_index;
+				//temp_ble_periph_adv_buf.msg[TEMP_ADV_MSG_INDEX] =  LAP_adv_buffer_index;
+				temp_ble_periph_adv_buf.buffer_index =  LAP_adv_buffer_index;
 
-				temp_adv_buffer_index++;
-				if(temp_adv_buffer_index >= MAX_SIZE_TEMP_ADV_BUFFER)
-					temp_adv_buffer_index = 0;
+				LAP_adv_buffer_index++;
+				if(LAP_adv_buffer_index >= MAX_SIZE_TEMP_ADV_BUFFER)
+					LAP_adv_buffer_index = 0;
 
 				int r;
 				r = msgq_send(ble_rx_msgq, (uint8_t*)&temp_ble_periph_adv_buf);
 				if(r == 0)
 				{
-					temp_adv_buffer_count++;
+					LAP_adv_buffer_count++;
 				}
 				else
 				{
@@ -535,15 +547,37 @@ static void on_ble_evt(ble_evt_t * p_ble_evt, void * p_context)
 			if(pPkt->len >= PAAR_MAXIMUM_PACKET_SIZE)
 			{
 				temp_ble_cent_rx_buf.len = PAAR_MAXIMUM_PACKET_SIZE;
-				memcpy(&temp_ble_cent_rx_buf.msg, &pPkt->data, PAAR_MAXIMUM_PACKET_SIZE);
+				temp_central_rx_buffer[LAP_cent_rx_buffer_index].data_len = PAAR_MAXIMUM_PACKET_SIZE;
+				
+				//memcpy(&temp_ble_cent_rx_buf.msg, &pPkt->data, PAAR_MAXIMUM_PACKET_SIZE);
+				memcpy(&(temp_central_rx_buffer[LAP_cent_rx_buffer_index].data), &pPkt->data, PAAR_MAXIMUM_PACKET_SIZE);
 			}
 			else
 			{
 				temp_ble_cent_rx_buf.len = pPkt->len;
-				memcpy(&temp_ble_cent_rx_buf.msg, pPkt->data, pPkt->len);
+				temp_central_rx_buffer[LAP_cent_rx_buffer_index].data_len = pPkt->len;
+
+				memset(&(temp_central_rx_buffer[LAP_cent_rx_buffer_index].data), 0, PAAR_MAXIMUM_PACKET_SIZE);
+				//memcpy(&temp_ble_cent_rx_buf.msg, pPkt->data, pPkt->len);
+				memcpy(&(temp_central_rx_buffer[LAP_cent_rx_buffer_index].data), pPkt->data, pPkt->len);
 			}
 
-			msgq_send(ble_rx_msgq, (uint8_t*)&temp_ble_cent_rx_buf);
+			temp_ble_cent_rx_buf.buffer_index = LAP_cent_rx_buffer_index;
+
+			LAP_cent_rx_buffer_index++;
+			if(LAP_cent_rx_buffer_index >= MAX_SIZE_TEMP_CENTRAL_BUFFER)
+				LAP_cent_rx_buffer_index = 0;
+
+			int r;
+			r = msgq_send(ble_rx_msgq, (uint8_t*)&temp_ble_cent_rx_buf);
+			if(r == 0)
+			{
+				LAP_cent_rx_buffer_count++;
+			}
+			else
+			{
+				printf("msgq send error : ble central rx msg\r\n");
+			}
 			break;
 		}
 
@@ -572,8 +606,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt, void * p_context)
 
 			}else if( p_wpkt->handle == m_ble_paar.rx_handles.value_handle ){
 
-
-
 				memset(&temp_ble_periph_buf, 0, sizeof(ble_rx_msgt));
 
 				temp_ble_periph_buf.evt = BLE_STACK_PERIPHERAL_EVT;
@@ -582,18 +614,41 @@ static void on_ble_evt(ble_evt_t * p_ble_evt, void * p_context)
 				if(p_wpkt->len >= PAAR_MAXIMUM_PACKET_SIZE)
 				{
 					temp_ble_periph_buf.len = PAAR_MAXIMUM_PACKET_SIZE;
-					memcpy(&temp_ble_periph_buf.msg, p_wpkt->data, PAAR_MAXIMUM_PACKET_SIZE);
+					temp_periphral_rx_buffer[LAP_periph_rx_buffer_index].data_len = PAAR_MAXIMUM_PACKET_SIZE;
+					
+					//memcpy(&temp_ble_periph_buf.msg, p_wpkt->data, PAAR_MAXIMUM_PACKET_SIZE);
+					memcpy(&(temp_periphral_rx_buffer[LAP_periph_rx_buffer_index].data), p_wpkt->data, PAAR_MAXIMUM_PACKET_SIZE);
 				}
 				else
 				{
 					temp_ble_periph_buf.len = p_wpkt->len;
-					memcpy(&temp_ble_periph_buf.msg, p_wpkt->data, p_wpkt->len);
+					temp_periphral_rx_buffer[LAP_periph_rx_buffer_index].data_len = p_wpkt->len;
+
+					memset(&(temp_periphral_rx_buffer[LAP_periph_rx_buffer_index].data), 0, PAAR_MAXIMUM_PACKET_SIZE);
+					//memcpy(&temp_ble_periph_buf.msg, p_wpkt->data, p_wpkt->len);
+					memcpy(&(temp_periphral_rx_buffer[LAP_periph_rx_buffer_index].data), p_wpkt->data, p_wpkt->len);
 				}
 
-				msgq_send(ble_rx_msgq, (uint8_t*)&temp_ble_periph_buf);
+				temp_ble_periph_buf.buffer_index = LAP_periph_rx_buffer_index;
+
+				LAP_periph_rx_buffer_index++;
+				if(LAP_periph_rx_buffer_index >= MAX_SIZE_TEMP_PERIPHRAL_BUFFER)
+					LAP_periph_rx_buffer_index = 0;
+
+				int r;
+				r = msgq_send(ble_rx_msgq, (uint8_t*)&temp_ble_periph_buf);
+				if(r == 0)
+				{
+					LAP_periph_rx_buffer_count++;
+				}
+				else
+				{
+					printf("msgq send error : ble peripheral rx msg\r\n");
+				}
 			}
 			else
 			{
+
 			}
 
 			break;
@@ -745,7 +800,7 @@ void ble_stack_task(void * arg) {
 	conn_params_init();
 
 	//setup tx power : 4dBm
-	sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_CONN,0,4);
+	sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_CONN,0,-30);
 
 	//set flag : ble stack init complete
 	set_ble_stack_init_flag(true);
@@ -777,7 +832,11 @@ void ble_stack_task(void * arg) {
 					//printf("malloc BLE_STACK_CENTRAL_EVT\r\n");
 				}
 
-				memcpy(temp_ble_rx_packet, &ble_rx_msg_buffer.msg, ble_rx_msg_buffer.len);
+				//memcpy(temp_ble_rx_packet, &ble_rx_msg_buffer.msg, ble_rx_msg_buffer.len);
+				memcpy(temp_ble_rx_packet, &(temp_central_rx_buffer[ble_rx_msg_buffer.buffer_index].data), ble_rx_msg_buffer.len);
+
+				LAP_cent_rx_buffer_count--;
+
 				BLE_process_event_send(BLE_CENTRAL_EVT, BLE_CENTRAL_ST_DATA_RECEIVED, ble_rx_msg_buffer.conn_handle, 0, ble_rx_msg_buffer.len, temp_ble_rx_packet);
 			}
 				break;
@@ -795,7 +854,11 @@ void ble_stack_task(void * arg) {
 					//printf("malloc BLE_STACK_PERIPHERAL_EVT\r\n");
 				}
 
-				memcpy(temp_ble_rx_packet, &ble_rx_msg_buffer.msg, ble_rx_msg_buffer.len);
+				//memcpy(temp_ble_rx_packet, &ble_rx_msg_buffer.msg, ble_rx_msg_buffer.len);
+				memcpy(temp_ble_rx_packet, &(temp_periphral_rx_buffer[ble_rx_msg_buffer.buffer_index].data), ble_rx_msg_buffer.len);
+
+				LAP_periph_rx_buffer_count--;
+
 				BLE_process_event_send(BLE_PERIPHERAL_EVT, BLE_PERIPHERAL_ST_DATA_RECEIVED, ble_rx_msg_buffer.conn_handle, 0, ble_rx_msg_buffer.len, temp_ble_rx_packet);
 			}
 				break;
@@ -803,11 +866,12 @@ void ble_stack_task(void * arg) {
 			{
 				if(callback_adv_report !=NULL)
 				{
-					callback_adv_report(&temp_adv_buffer[ble_rx_msg_buffer.msg[TEMP_ADV_MSG_INDEX]]);
+					//callback_adv_report(&temp_adv_buffer[ble_rx_msg_buffer.msg[TEMP_ADV_MSG_INDEX]]);
+					callback_adv_report(&temp_adv_buffer[ble_rx_msg_buffer.buffer_index]);
 				}
 				//process_ADV_Report(&temp_adv_buffer[ble_rx_msg_buffer.msg[TEMP_ADV_MSG_INDEX]]);
-				memset(&temp_adv_buffer[ble_rx_msg_buffer.msg[TEMP_ADV_MSG_INDEX]], 0, sizeof(LAP_ble_adv_report));
-				temp_adv_buffer_count--;
+				//memset(&temp_adv_buffer[ble_rx_msg_buffer.msg[TEMP_ADV_MSG_INDEX]], 0, sizeof(LAP_ble_adv_report));
+				LAP_adv_buffer_count--;
 			}
 				break;
 			}

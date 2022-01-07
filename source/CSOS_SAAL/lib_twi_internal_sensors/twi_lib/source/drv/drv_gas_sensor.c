@@ -36,6 +36,8 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <ubinos.h>
+
 #if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
 
 #include "drv_gas_sensor.h"
@@ -53,6 +55,9 @@
 #include "macros_common.h"
 
 #include "hw_config.h"
+#include "SAAL_hw_config.h"
+
+#define THINGY_HW_v0_9_0                    1
 
 #define GAS_SENSOR_ID                       (0x81)   ///< HW ID of the gas sensor.
 #define GAS_SENSOR_TDWAKE_ENABLE_DELAY_US     (20)   ///< minimum time between sensor I2C accesses.
@@ -88,8 +93,12 @@ static __inline ret_code_t ccs811_open(void)
 
     nrf_delay_us(GAS_SENSOR_TDWAKE_ENABLE_DELAY_US);
 
-    nrf_gpio_pin_clear(CCS_WAKE_UP);
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+    err_code = drv_ext_gpio_pin_clear(SX_CCS_WAKE);
     RETURN_IF_ERROR(err_code);
+#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
+    nrf_gpio_pin_clear(CCS_WAKE_UP);
+#endif
 
     nrf_delay_us(GAS_SENSOR_TAWAKE_ENABLE_DELAY_US);  // Delay for gas sensor to become active according to datasheet.
 
@@ -106,8 +115,12 @@ static __inline ret_code_t ccs811_close(void)
     err_code = drv_ccs811_close();
     RETURN_IF_ERROR(err_code);
 
-    nrf_gpio_pin_set(CCS_WAKE_UP);
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+    err_code = drv_ext_gpio_pin_set(SX_CCS_WAKE);
     RETURN_IF_ERROR(err_code);
+#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
+    nrf_gpio_pin_set(CCS_WAKE_UP);
+#endif
 
     return NRF_SUCCESS;
 }
@@ -298,31 +311,36 @@ static ret_code_t io_pins_init(void)
 {
     ret_code_t    err_code = NRF_SUCCESS;
 
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+
+    err_code = drv_ext_gpio_cfg_output(SX_CCS_PWR_CTRL);
+    RETURN_IF_ERROR(err_code);
+
+    err_code = drv_ext_gpio_cfg_output(SX_CCS_RESET);
+    RETURN_IF_ERROR(err_code);
+
+    err_code = drv_ext_gpio_cfg_output(SX_CCS_WAKE);
+    RETURN_IF_ERROR(err_code);
+
+    err_code = drv_ext_gpio_pin_set(CCS_PWR_CTRL);
+    RETURN_IF_ERROR(err_code);
+
+    err_code = drv_ext_gpio_pin_set(SX_CCS_RESET);
+    RETURN_IF_ERROR(err_code);
+    
+    err_code = drv_ext_gpio_pin_clear(SX_CCS_WAKE);
+    RETURN_IF_ERROR(err_code);
+#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
+
     nrf_gpio_cfg_output(CCS_PWR_CTRL);
-    RETURN_IF_ERROR(err_code);
-
     nrf_gpio_cfg_output(CCS_RESET);
-    RETURN_IF_ERROR(err_code);
-
     nrf_gpio_cfg_output(CCS_WAKE_UP);
-    RETURN_IF_ERROR(err_code);
 
-    #if defined(THINGY_HW_v0_7_0)
-        while (drv_ext_gpio_pin_clear(CCS_PWR_CTRL) != NRF_SUCCESS);
-    #elif defined(THINGY_HW_v0_8_0)
-        while (drv_ext_gpio_pin_clear(CCS_PWR_CTRL) != NRF_SUCCESS);
-    #elif defined(THINGY_HW_v0_9_0)
-        while (drv_ext_gpio_pin_clear(CCS_PWR_CTRL) != NRF_SUCCESS);
-    #else
-//        while (nrf_gpio_pin_out_read(CCS_PWR_CTRL)   != NRF_SUCCESS);
-        nrf_gpio_pin_set(CCS_PWR_CTRL);
-    #endif
-
+    nrf_gpio_pin_set(CCS_PWR_CTRL);
     nrf_gpio_pin_set(CCS_RESET);
-    RETURN_IF_ERROR(err_code);
-
     nrf_gpio_pin_clear(CCS_WAKE_UP);
-    RETURN_IF_ERROR(err_code);
+
+#endif
 
     nrf_delay_ms(GAS_SENSOR_PWR_ON_DELAY_MS); // Allow the CCS811 to power up.
 
@@ -445,6 +463,7 @@ ret_code_t drv_gas_sensor_start(drv_gas_sensor_mode_t mode)
     err_code = gpiote_init(CCS_INT);
     APP_ERROR_CHECK(err_code);
 
+/*
     // Power on gas sensor.
     #if defined(THINGY_HW_v0_7_0)
         while (drv_ext_gpio_pin_clear(CCS_PWR_CTRL) != NRF_SUCCESS);
@@ -453,15 +472,27 @@ ret_code_t drv_gas_sensor_start(drv_gas_sensor_mode_t mode)
     #elif defined(THINGY_HW_v0_9_0)
         while (drv_ext_gpio_pin_clear(CCS_PWR_CTRL) != NRF_SUCCESS);
     #else
-//        while (nrf_gpio_pin_out_read(CCS_PWR_CTRL)   != NRF_SUCCESS);
+        while (nrf_gpio_pin_out_read(CCS_PWR_CTRL)   != NRF_SUCCESS);
         nrf_gpio_pin_set(CCS_PWR_CTRL);
     #endif
+*/
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+    err_code = drv_ext_gpio_pin_set(CCS_PWR_CTRL);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = drv_ext_gpio_pin_clear(SX_CCS_WAKE);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = drv_ext_gpio_pin_set(SX_CCS_RESET);
+    APP_ERROR_CHECK(err_code);
+
+#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
+    nrf_gpio_pin_set(CCS_PWR_CTRL);
 
     nrf_gpio_pin_clear(CCS_WAKE_UP);
-    APP_ERROR_CHECK(err_code);
 
     nrf_gpio_pin_set(CCS_RESET);
-    APP_ERROR_CHECK(err_code);
+#endif
 
     nrf_delay_ms(GAS_SENSOR_PWR_ON_DELAY_MS); // Allow the CCS811 to power up.
     
@@ -546,23 +577,21 @@ ret_code_t drv_gas_sensor_stop(void)
     err_code = ccs811_close();
     RETURN_IF_ERROR(err_code);
 
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+    err_code = drv_ext_gpio_pin_clear(SX_CCS_RESET);
+    RETURN_IF_ERROR(err_code);
+
+    err_code = drv_ext_gpio_pin_clear(SX_CCS_WAKE);
+    RETURN_IF_ERROR(err_code);
+
+    err_code = drv_ext_gpio_pin_clear(CCS_PWR_CTRL);
+    RETURN_IF_ERROR(err_code);
+
+#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
     nrf_gpio_pin_clear(CCS_RESET);
-    RETURN_IF_ERROR(err_code);
-
     nrf_gpio_pin_clear(CCS_WAKE_UP);
-    RETURN_IF_ERROR(err_code);
-
-    // Power off gas sensor.
-    #if defined(THINGY_HW_v0_7_0)
-        err_code = drv_ext_gpio_pin_set(CCS_PWR_CTRL);
-    #elif defined(THINGY_HW_v0_8_0)
-        err_code = drv_ext_gpio_pin_set(CCS_PWR_CTRL);
-    #elif defined(THINGY_HW_v0_9_0)
-        err_code = drv_ext_gpio_pin_set(CCS_PWR_CTRL);
-    #else
-        nrf_gpio_pin_clear(CCS_PWR_CTRL);
-    #endif
-    RETURN_IF_ERROR(err_code);
+    nrf_gpio_pin_clear(CCS_PWR_CTRL);
+#endif
 
     return NRF_SUCCESS;
 }
@@ -604,22 +633,22 @@ ret_code_t drv_gas_sensor_init(drv_gas_init_t * p_init)
         NRF_LOG_DEBUG(" HW ID: 0x%x, HW version: 0x%x, FW boot version: 0x%x, FW app version: 0x%x \r\n", hw_id, hw_version, fw_boot_version, fw_app_version);
     #endif
 
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+
+    err_code = drv_ext_gpio_pin_clear(SX_CCS_RESET);
+    RETURN_IF_ERROR(err_code);
+
+    err_code = drv_ext_gpio_pin_clear(SX_CCS_WAKE);
+    RETURN_IF_ERROR(err_code);
+
+    err_code = drv_ext_gpio_pin_clear(CCS_PWR_CTRL);
+    RETURN_IF_ERROR(err_code);
+
+#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
     nrf_gpio_pin_clear(CCS_RESET);
-    RETURN_IF_ERROR(err_code);
-
     nrf_gpio_pin_clear(CCS_WAKE_UP);
-    RETURN_IF_ERROR(err_code);
-
-    #if defined(THINGY_HW_v0_7_0)
-        err_code = drv_ext_gpio_pin_set(CCS_PWR_CTRL);
-    #elif defined(THINGY_HW_v0_8_0)
-        err_code = drv_ext_gpio_pin_set(CCS_PWR_CTRL);
-    #elif defined(THINGY_HW_v0_9_0)
-        err_code = drv_ext_gpio_pin_set(CCS_PWR_CTRL);
-    #else
-        nrf_gpio_pin_clear(CCS_PWR_CTRL);
-    #endif
-    RETURN_IF_ERROR(err_code);
+    nrf_gpio_pin_clear(CCS_PWR_CTRL);
+#endif
 
     return NRF_SUCCESS;
 }

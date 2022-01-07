@@ -36,6 +36,8 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <ubinos.h>
+
 #if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
 
 #include "drv_ccs811.h"

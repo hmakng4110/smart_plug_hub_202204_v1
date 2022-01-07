@@ -17,12 +17,15 @@ set_cache(SEGGERRTT__DTTY_ENABLE TRUE BOOL)
 
 set_cache(NRF5SDK__UART_ENABLED TRUE BOOL)
 set_cache(NRF5SDK__NRFX_UARTE0_ENABLED TRUE BOOL)
+set_cache(NRF5SDK__SPIM_ENABLED TRUE BOOL)
+#set_cache(NRF5SDK__SPIS_ENABLED TRUE BOOL)
+set_cache(NRF5SDK__TWI_ENABLED TRUE BOOL)
 
 set_cache(UBINOS__UBIK__MSGQ_MSGSIZE_MAX 32 STRING)
 
-set_cache(CSOS_SAAL__USE_LIB_433 FALSE BOOL)
-set_cache(CSOS_SAAL__USE_LIB_twi_internal_sensors FALSE BOOL)
-set_cache(CSOS_SAAL__USE_LIB_wifi_wizfi360 FALSE BOOL)
+set_cache(CSOS_SAAL__USE_LIB_ACC_bmi160 TRUE BOOL)
+set_cache(CSOS_SAAL__USE_LIB_ALS_opt3001 TRUE BOOL)
+set_cache(CSOS_SAAL__USE_LIB_AAT_HW_other TRUE BOOL)
 
 include(${PROJECT_UBINOS_DIR}/config/ubinos_nrf52dk_softdevice.cmake)
 include(${PROJECT_LIBRARY_DIR}/seggerrtt_wrapper/config/seggerrtt.cmake)
@@ -50,7 +53,7 @@ include_directories(${_tmp_source_dir}/arch/arm/cortexm/${_temp_board_model}/${_
 include_directories(${_tmp_source_dir}/arch/arm/cortexm/${_temp_board_model})
 include_directories(${_tmp_source_dir})
 
-include_directories(${_tmp_source_dir}/config/SPH)
+include_directories(${_tmp_source_dir}/config/AAT)
 
 file(GLOB_RECURSE _tmp_sources
     "${_tmp_source_dir}/*.c"

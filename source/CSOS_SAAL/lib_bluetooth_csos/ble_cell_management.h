@@ -8,7 +8,7 @@
 #ifndef APP_BLE_CELL_MANAGEMENT_H_
 #define APP_BLE_CELL_MANAGEMENT_H_
 
-#include <lib_bluetooth_csos/LAP_api.h>
+#include <LAP_api.h>
 #include <stdbool.h>
 #include "ble_gap.h"
 

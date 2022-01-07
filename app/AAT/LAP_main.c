@@ -30,6 +30,30 @@ uint16_t cccd_target_connhandle = BLE_CONN_HANDLE_INVALID;
 
 static msgq_pt LAP_msgq;
 
+static bool is_ble_peripheral_connected = false;
+
+void set_ble_peripheral_connected_flag(bool val)
+{
+	is_ble_peripheral_connected = val;
+
+	#if(BLE_DEBUGGING_LED_ENABLE == 1)
+		if(val == true)
+		{
+			AAT_LED_ON(BLUE);
+		}
+		else
+		{
+			AAT_LED_OFF(WHITE);
+		}
+	#endif
+
+}
+
+bool get_ble_peripheral_connected_flag()
+{
+	return is_ble_peripheral_connected;
+}
+
 //APP_TIMER_DEF(scan_fail_timeout_timer);
 
 static scan_target_paar_id_st ble_test_target_paar_id[TEST_MAX_CONNECTION_DEVICE];
@@ -37,15 +61,19 @@ static scan_target_paar_id_st ble_test_target_paar_id[TEST_MAX_CONNECTION_DEVICE
 #if(SP_SW_MODE_SETUP == SP_SW_MODE_TEST_PERIPHERAL || SP_SW_MODE_SETUP == SP_SW_MODE_TEST_CENTRAL )
 uint32_t target_paarid[TEST_MAX_CONNECTION_DEVICE] =
 {
-		0x010000E4,
+		0xFFFFFF01,
 };
 #elif(SP_SW_MODE_SETUP == SP_SW_MODE_SPH)
+#if(SP_TEST_LOCATION == SP_TEST_LOCATION_LIVINGROOM)
 uint32_t target_paarid[TEST_MAX_CONNECTION_DEVICE] =
 {
-		0x010000E4,
-		0x020000E4,
-		0x030000E4
+
+		0x010001E4,
+		0x020001E4,
+		0x010000D8
+	
 };
+#endif
 #endif
 
 void set_scan_target_paar_id_test()
@@ -142,9 +170,14 @@ static void send_test_msg_central(uint16_t conn_handle, uint16_t handle)
 	memset(temp_packet, 0, PAAR_MAXIMUM_PACKET_SIZE);
 
 	temp_packet[0] = test_send_count++;
-	if(test_send_count >= 4)
+	if(test_send_count >= 240)
 		test_send_count = 1;
 
+	uint8_t i;
+	for(i=1; i<240; i++)
+	{
+		temp_packet[i] = i;
+	}
 
 	printf("BLE send msg : test_msg %d\r\n", temp_packet[0]);
 
@@ -153,7 +186,7 @@ static void send_test_msg_central(uint16_t conn_handle, uint16_t handle)
 #endif
 
 #if(SP_SW_MODE_SETUP == SP_SW_MODE_TEST_PERIPHERAL)
-uint8_t test_send_count = 0;
+//uint8_t test_send_count = 0;
 
 static void send_test_msg_peripheral()
 {
@@ -164,7 +197,15 @@ static void send_test_msg_peripheral()
 	if(test_send_count >= 4)
 		test_send_count = 1;
 
+	uint8_t i;
+	for(i=1; i<240; i++)
+	{
+		temp_packet[i] = i;
+	}
+
 	printf("BLE send msg : test_msg %d\r\n",temp_packet[0]);
+
+
 
 	LAP_send_ble_msg_peripheral(temp_packet, PAAR_MAXIMUM_PACKET_SIZE);
 }
@@ -237,8 +278,13 @@ static void processing_LAP_Central_Disconnected(LAPEvt_msgt LAP_evt_msg)
 
 static void processing_LAP_Central_Data_Received(LAPEvt_msgt LAP_evt_msg)
 {
-#if(SP_SW_MODE_SETUP == SP_SW_MODE_TEST_CENTRAL)
-	printf("BLE receive msg : test_msg  : %d\r\n", LAP_evt_msg.msg[0]);
+	printf("BLE receive msg : test_msg  : %d ", LAP_evt_msg.msg[0]);
+	uint8_t i;
+	for(i=1; i<LAP_evt_msg.msg_len; i++)
+	{
+		printf("%d", LAP_evt_msg.msg[i]);
+	}
+	printf("\r\n");
 
 	uuidhandle profile_data;
 
@@ -249,53 +295,16 @@ static void processing_LAP_Central_Data_Received(LAPEvt_msgt LAP_evt_msg)
 	if(result != 0)
 		return;
 
-	task_sleep(1000);
+	task_sleep(5000);
 
 	send_test_msg_central(LAP_evt_msg.conn_handle, profile_data.rx_handle);
-#elif(SP_SW_MODE_SETUP == SP_SW_MODE_SPH)
-	uint8_t report_device_id[4];
-
-	uint8_t* mqtt_msg;
-
-	uint8_t* temp_paar_id = BLE_cell_management_search_paar_id_by_connhandle(LAP_evt_msg.conn_handle);
-	if(temp_paar_id != NULL)
-	{
-		//swap ID 4Bytes
-		report_device_id[3] = temp_paar_id[0];
-		report_device_id[2] = temp_paar_id[1];
-		report_device_id[1] = temp_paar_id[2];
-		report_device_id[0] = temp_paar_id[3];
-	}
-	else
-	{
-		memset(report_device_id, 0xFF, PAAR_ID_SIZE);
-	}
-
-	uint8_t service_id = LAP_evt_msg.msg[PAAR_PACKET_INDEX_SERVICE_ID];
-	uint8_t body_data_len = LAP_evt_msg.msg_len - PAAR_PACKET_HEADER_LEN;
-
-	//===============Processing Packet=====================================
-	//|PAAR ID(4Bytes)|SERVICE ID(1Byte)|Data Length(1Byte|Body Data(N Bytes)|
-	mqtt_msg = malloc(PAAR_ID_SIZE + PAAR_SERVICE_ID_SIZE + body_data_len+2);
-
-	memset(mqtt_msg, 0, sizeof(mqtt_msg));
-
-	memcpy(&mqtt_msg[PAAR_MQTT_INDEX_PAAR_ID], report_device_id, PAAR_ID_SIZE);
-
-	memcpy(&mqtt_msg[PAAR_MQTT_INDEX_SERVCIE_ID], &service_id, PAAR_SERVICE_ID_SIZE);
-
-	mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA_LEN] = body_data_len;
-
-	memcpy(&mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA], &LAP_evt_msg.msg[PAAR_PACKET_HEADER_LEN], body_data_len);
-
-	//wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT, 0, mqtt_msg);
-
-#endif
 }
 
 static void processing_LAP_Peripheral_Connected(LAPEvt_msgt LAP_evt_msg)
 {
+	
 	printf("BLE Peripheral connect\r\n");
+	set_ble_peripheral_connected_flag(true);
 }
 
 static void processing_LAP_Peripheral_Disconnected(LAPEvt_msgt LAP_evt_msg)
@@ -303,27 +312,39 @@ static void processing_LAP_Peripheral_Disconnected(LAPEvt_msgt LAP_evt_msg)
 	task_sleep(TEST_ADV_START_DELAY);
 	printf("BLE Peripheral disconnect\r\n");
 
+	set_ble_peripheral_connected_flag(false);
+
+	task_sleep(1000);
+
 	printf("BLE ADV start\r\n");
 	LAP_start_ble_adv_LIDx();
 }
 
 static void processing_LAP_Peripheral_Data_Received(LAPEvt_msgt LAP_evt_msg)
 {
-#if(SP_SW_MODE_SETUP == SP_SW_MODE_TEST_PERIPHERAL)
-	printf("BLE receive msg : test_msg  : %d\r\n", LAP_evt_msg.msg[0]);
-	task_sleep(1000);
+	printf("BLE receive msg : test_msg  : %d ", LAP_evt_msg.msg[0]);
+	uint8_t i;
+
+	task_sleep(100);
+
+	printf("\r\n size  : %d ", (uint8_t)LAP_evt_msg.msg_len);
+	for(i=1; i<LAP_evt_msg.msg_len; i++)
+	{
+		printf("%d ", LAP_evt_msg.msg[i]);
+		task_sleep(10);
+	}
+	printf("\r\n");
+
+	task_sleep(5000);
 	send_test_msg_peripheral();
-#endif
 }
 
 static void processing_LAP_Peripheral_CCCD_Enabled(LAPEvt_msgt LAP_evt_msg)
 {
 	printf("BLE CCCD is enabled. \r\n");
 
-#if(SP_SW_MODE_SETUP == SP_SW_MODE_TEST_PERIPHERAL)
 	task_sleep(2000);
 	send_test_msg_peripheral();
-#endif
 }
 
 static void processing_LAP_Central_event(LAPEvt_msgt LAP_evt_msg)
@@ -448,6 +469,21 @@ void process_ADV_Report(LAP_ble_adv_report* pPkt)
 void LAP_Protocol_start_operation()
 {
 	set_adv_callback_func(process_ADV_Report);
+
+	#if(AAT_SW_MODE_DEFAULT == AAT_SW_MODE_TEST_PERIPHRAL)
+
+	task_sleep(TEST_ADV_START_DELAY);
+	LAP_start_ble_adv_LIDx();
+
+	#endif
+
+	#if(AAT_SW_MODE_DEFAULT == AAT_SW_MODE_TEST_CENTRAL)
+	set_scan_target_paar_id_test();
+
+	task_sleep(1000);
+
+	LAP_start_ble_scan(NULL);
+	#endif
 /*
 #if(SP_SW_MODE_SETUP == SP_SW_MODE_SPH)
 	set_scan_target_paar_id_test();
@@ -496,7 +532,7 @@ void LAP_main_task(void* arg){
 
 	BLE_cell_management_data_init();
 
-	set_adv_callback_func(LAP_process_ble_adv_report);
+	//set_adv_callback_func(LAP_process_ble_adv_report);
 
 	LAP_Protocol_start_operation();
 

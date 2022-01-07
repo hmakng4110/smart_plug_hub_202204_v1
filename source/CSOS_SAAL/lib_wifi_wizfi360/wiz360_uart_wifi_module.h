@@ -12,6 +12,7 @@
 #include <sw_config.h>
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define UART_WIFI_READ_BUF_SIZE		2048
 #define UART_WIFI_WRITE_BUF_SIZE	2048
@@ -28,23 +29,14 @@
 #define TEST_AP_SSID		"AP_DEMO"
 #define TEST_AP_PASSWORD	"csos!1234"
 
-#if(SP_TEST_LOCATION == SP_TEST_LOCATION_BEDROOM)
-#define TEST_MQTT_CLIENT_ID		"test1_bedroom"
-
-#define TEST_MQTT_USER_NAME		"Test_User1"
-#define TEST_MQTT_USER_PASSWORD	"testtest"
-
-#elif(SP_TEST_LOCATION == SP_TEST_LOCATION_LIVINGROOM)
-#define TEST_MQTT_CLIENT_ID		"test2_livingroom"
 
 #define TEST_MQTT_USER_NAME		"Test_User2"
 #define TEST_MQTT_USER_PASSWORD	"testtest"
 
-#endif
-#define TEST_MQTT_ALIVE_TIME	60
+#define TEST_MQTT_ALIVE_TIME	300
 
-#define TEST_MQTT_TOPIC_PUBLISH			"CSOS/AB001309/010000D4/ADL_DATA"
-#define TEST_MQTT_TOPIC_SUBSCRIBE		"sensorID"
+//#define TEST_MQTT_TOPIC_PUBLISH			"CSOS/AB001309/040001D4/ADL_DATA"
+//#define TEST_MQTT_TOPIC_SUBSCRIBE		"sensorID"
 
 #define TEST_MQTT_BROKER_IP				"155.230.186.105"
 #define TEST_MQTT_BROKER_PORT			"1883"
@@ -72,8 +64,10 @@ typedef struct _wifi_processing_msgq_event_t {
 } wifi_processing_msgq_event_t;
 
 enum{
-	WIFI_PROCESSING_EVENT_SEND_MQTT,
+	WIFI_PROCESSING_EVENT_SEND_MQTT = 0,
 	WIFI_PROCESSING_EVENT_ERROR_RESET,
+	WIFI_PROCESSING_EVENT_SEND_MQTT_HB,
+	WIFI_PROCESSING_EVENT_SEND_MQTT_ENV,
 };
 
 typedef enum {

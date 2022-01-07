@@ -28,7 +28,7 @@
 #include "ble_gatt.h"
 
 //todo GATT MTU Size 확인
-#define BLE_PAAR_MAX_DATA_LEN (BLE_GATT_ATT_MTU_DEFAULT - 3) /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
+#define BLE_PAAR_MAX_DATA_LEN 240/*(BLE_GATT_ATT_MTU_DEFAULT - 3)*/ /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
 
 /* Forward declaration of the ble_paar_service_t type. */
 typedef struct ble_paar_s ble_paar_t;
@@ -99,7 +99,7 @@ void ble_nus_on_ble_evt(ble_paar_t * p_nus, ble_evt_t * p_ble_evt);
  */
 uint32_t ble_paar_ble_send_msg(ble_paar_t * p_paar_s, uint8_t * msg, uint16_t length);
 
-#define PAAR_MAXIMUM_PACKET_SIZE	19
+#define PAAR_MAXIMUM_PACKET_SIZE	BLE_PAAR_MAX_DATA_LEN
 
 #endif // BLE_NUS_H__
 

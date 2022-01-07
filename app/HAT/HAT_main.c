@@ -175,19 +175,14 @@ void HAT_main_task(void* arg){
     saadc_off_calib();
 	// saadc ------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-
     err_code = app_timer_init();
     APP_ERROR_CHECK(err_code);
 
     err_code = app_timer_create(&m_tick_timer, APP_TIMER_MODE_REPEATED, app_tick_handler);
     APP_ERROR_CHECK(err_code);
 
-
-
     LED_toggle(PIN_LED1);
     LED_toggle(PIN_LED2);
-
-
 
 //_____________________________________________________________________________
 

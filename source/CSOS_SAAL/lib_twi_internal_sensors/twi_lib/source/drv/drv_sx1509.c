@@ -36,6 +36,8 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <ubinos.h>
+
 #if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
 
 #include <drv_sx1509.h>
@@ -238,8 +240,10 @@ static bool multi_byte_register_set(uint8_t length, uint8_t *p_write_descr)
     {
         nrf_drv_twi_t const * p_instance = m_drv_sx1509.p_cfg->p_twi_instance;
         uint8_t               twi_addr   = m_drv_sx1509.p_cfg->twi_addr;
-
-        return ( (nrf_drv_twi_tx(p_instance, twi_addr, p_write_descr, length, M_TWI_STOP) == NRF_SUCCESS) );
+        ret_code_t err;
+        err = nrf_drv_twi_tx(p_instance, twi_addr, p_write_descr, length, M_TWI_STOP);
+        return (err == NRF_SUCCESS);
+        //return ( (nrf_drv_twi_tx(p_instance, twi_addr, p_write_descr, length, M_TWI_STOP) == NRF_SUCCESS) );
     }
 
     return ( false );
@@ -265,14 +269,14 @@ uint32_t drv_sx1509_reg_get(uint8_t reg_addr, uint8_t *p_value)
 
 uint32_t drv_sx1509_open(drv_sx1509_cfg_t const * const p_drv_sx1509_cfg)
 {
-    if ( (m_drv_sx1509.p_cfg == NULL)
-    &&   (twi_manager_request(p_drv_sx1509_cfg->p_twi_instance, p_drv_sx1509_cfg->p_twi_cfg, NULL, NULL) == NRF_SUCCESS) )
-    {
+//    if ( (m_drv_sx1509.p_cfg == NULL)
+//   &&   (twi_manager_request(p_drv_sx1509_cfg->p_twi_instance, p_drv_sx1509_cfg->p_twi_cfg, NULL, NULL) == NRF_SUCCESS) )
+//    {
         nrf_drv_twi_enable(p_drv_sx1509_cfg->p_twi_instance);
         m_drv_sx1509.p_cfg = p_drv_sx1509_cfg;
 
         return ( DRV_SX1509_STATUS_CODE_SUCCESS );
-    }
+//    }
 
     return ( DRV_SX1509_STATUS_CODE_DISALLOWED );
 }

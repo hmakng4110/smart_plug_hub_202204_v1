@@ -98,6 +98,10 @@ uint32_t drv_color_start(void);
  */
 uint32_t drv_color_stop(void);
 
+
+
+drv_bh1745_data_t sh_bh1745_color_data_get(void);
+
 #endif
 
 /** @} */

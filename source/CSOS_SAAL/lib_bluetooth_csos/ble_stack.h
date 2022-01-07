@@ -43,7 +43,7 @@
 #define SCAN_WINDOW            			0x0140//0x0280//0x0140          /**< (100ms) Determines scan window in units of 0.625 millisecond. */
 #define SCAN_ACTIVE             		0               /**< If 1, performe active scanning (scan requests). */
 #define SCAN_SELECTIVE         			0               /**< If 1, ignore unknown devices (non whitelisted). */
-#define SCAN_TIMEOUT            		0x0280//0x0140          /**< Scan timeout between 0x0001 and 0xFFFF in seconds, 0x0000 disables timeout. */
+#define SCAN_TIMEOUT            		0x0050//0x0100//0x0280//0x0140          /**< Scan timeout between 0x0001 and 0xFFFF in seconds, 0x0000 disables timeout. */
 
 /**
  * connection parameter
@@ -90,6 +90,16 @@ typedef struct{
 	uint8_t data[LAP_ADV_DATA_LEN];
 	uint16_t data_len;
 }LAP_ble_adv_report;
+
+typedef struct{
+	uint16_t data_len;
+	uint8_t data[PAAR_MAXIMUM_PACKET_SIZE];
+}LAP_ble_central_packet;
+
+typedef struct{
+	uint16_t data_len;
+	uint8_t data[PAAR_MAXIMUM_PACKET_SIZE];
+}LAP_ble_peripheral_packet;
 
 void BLE_stack_task_init(void);
 

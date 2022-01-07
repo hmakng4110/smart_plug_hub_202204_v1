@@ -36,6 +36,8 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <ubinos.h>
+
 #if (CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)
 
 #include "drv_color.h"
@@ -44,6 +46,7 @@
 #include "app_scheduler.h"
 #define  NRF_LOG_MODULE_NAME drv_color
 #include "nrf_log.h"
+#include "nrf_delay.h"
 #include "macros_common.h"
 
 static drv_bh1745_cfg_t         m_bh1745_cfg;
@@ -274,6 +277,34 @@ uint32_t drv_color_stop(void)
     RETURN_IF_ERROR(err_code);
 
     return drv_bh1745_close();
+}
+
+drv_bh1745_data_t sh_bh1745_color_data_get(void) {
+	uint32_t err;
+	drv_bh1745_data_t data;
+	uint8_t int_reg;
+
+	err = drv_bh1745_open(&m_bh1745_cfg);
+	APP_ERROR_CHECK(err);
+
+	err = drv_bh1745_meas_enable(true);
+	APP_ERROR_CHECK(err);
+
+	nrf_delay_ms(161);
+
+	err = drv_bh1745_int_get(&int_reg);
+	APP_ERROR_CHECK(err);
+
+	err = drv_bh1745_data_get(&data);
+	APP_ERROR_CHECK(err);
+
+	err= drv_bh1745_meas_enable(false);
+	APP_ERROR_CHECK(err);
+
+	err = drv_bh1745_close();
+	APP_ERROR_CHECK(err);
+
+	return data;
 }
 
 #endif /*(CSOS_SAAL__USE_LIB_twi_internal_sensors == 1)*/
