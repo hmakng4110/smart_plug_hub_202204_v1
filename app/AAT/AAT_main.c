@@ -417,7 +417,7 @@ void AAT_send_packet_config(uint8_t water, uint8_t lux, uint8_t *send_packet)
 	buf[HEADER_INDEX] = M2M_HEADER;
 	buf[SEQ_NUM_INDEX] = WATER_SERVICE_SEQ_NUM;
 	buf[SERVICE_ID_INDEX] = AAT_SERVICE_ID;
-	buf[LEN_INDEX] = 0x03;
+	buf[LEN_INDEX] = 0x04;
 
 	buf[CMD_INDEX] = 0x03;
 

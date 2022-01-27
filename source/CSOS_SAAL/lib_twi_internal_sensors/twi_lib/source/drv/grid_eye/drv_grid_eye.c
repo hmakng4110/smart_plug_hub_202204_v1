@@ -266,7 +266,7 @@ uint32_t drv_grid_eye_disable(void) {
 uint32_t drv_grid_eye_get_pixels(int * buf, uint8_t size) {
 	ret_code_t err = NRF_SUCCESS;
 	uint16_t recast;
-	float converted;
+//	float converted;
 	int16_t converted_int;
 	uint8_t bytes_to_read = min((uint8_t)(size << 1), (uint8_t)(GRID_EYE_PIXEL_ARRAY_SIZE << 1));
 	uint8_t raw_array[bytes_to_read];

@@ -42,9 +42,16 @@ uint32_t target_paarid[TEST_MAX_CONNECTION_DEVICE] =
 #elif(SP_SW_MODE_SETUP == SP_SW_MODE_SPH)
 uint32_t target_paarid[TEST_MAX_CONNECTION_DEVICE] =
 {
+		0x010909E0,
+		0x090001E0,
+};
+/*
+uint32_t target_paarid[TEST_MAX_CONNECTION_DEVICE] =
+{
 		0x090001E0,
 		0x030001D8,
 };
+*/
 #endif
 
 void set_scan_target_paar_id_test()
@@ -275,8 +282,9 @@ static void processing_LAP_Central_Data_Received(LAPEvt_msgt LAP_evt_msg)
 	}
 
 	uint8_t service_id = LAP_evt_msg.msg[PAAR_PACKET_INDEX_SERVICE_ID];
-	uint8_t body_data_len = LAP_evt_msg.msg_len - PAAR_PACKET_HEADER_LEN;
-
+	//uint8_t body_data_len = LAP_evt_msg.msg_len - PAAR_PACKET_HEADER_LEN;
+	uint8_t body_data_len = LAP_evt_msg.msg[PAAR_PACKET_INDEX_DATA_LEN];
+	
 	//===============Processing Packet=====================================
 	//|PAAR ID(4Bytes)|SERVICE ID(1Byte)|Data Length(1Byte|Body Data(N Bytes)|
 	mqtt_msg = malloc(PAAR_ID_SIZE + PAAR_SERVICE_ID_SIZE + body_data_len+2);
@@ -289,9 +297,20 @@ static void processing_LAP_Central_Data_Received(LAPEvt_msgt LAP_evt_msg)
 
 	mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA_LEN] = body_data_len;
 
-	memcpy(&mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA], &LAP_evt_msg.msg[PAAR_PACKET_HEADER_LEN], body_data_len);
+	
 
-	wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT, 0, mqtt_msg);
+	if(mqtt_msg[PAAR_MQTT_INDEX_SERVCIE_ID] == 0x18)
+	{
+		memcpy(&mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA], &LAP_evt_msg.msg[PAAR_PACKET_INDEX_BODY_DATA_BODY], body_data_len);
+
+		wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT_ENV, 0, mqtt_msg);
+	}
+	else
+	{
+		memcpy(&mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA], &LAP_evt_msg.msg[PAAR_PACKET_INDEX_BODY_DATA_CMD], body_data_len);
+		wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT, 0, mqtt_msg);
+	}
+		
 
 #endif
 }

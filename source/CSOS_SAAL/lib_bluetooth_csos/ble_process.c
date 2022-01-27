@@ -120,7 +120,7 @@ static void processing_BLE_Central_Data_Received(BLEPEvt_msgt BLE_evt_msg)
 	LAP_event_send(LAP_CENTRAL_EVT, LAP_CENTRAL_ST_DATA_RECEIVED, BLE_evt_msg.conn_handle, BLE_evt_msg.handle, BLE_evt_msg.msg_len, temp_msg);
 }
 
-int test_ct = 0;
+//int test_ct = 0;
 
 static void processing_BLE_Central_Scan_Start(BLEPEvt_msgt BLE_evt_msg)
 {
@@ -133,7 +133,7 @@ static void processing_BLE_Central_Scan_Start(BLEPEvt_msgt BLE_evt_msg)
 	{
 		clear_scan_target_paar_id();
 	}
-	printf("SCAN_test_cound : %d \r\n", test_ct++);
+	//printf("SCAN_test_cound : %d \r\n", test_ct++);
 	PAAR_scan_start();
 }
 

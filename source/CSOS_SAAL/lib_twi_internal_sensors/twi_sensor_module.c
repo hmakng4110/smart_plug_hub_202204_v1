@@ -28,7 +28,7 @@
 #include "hw_config.h"
 #include "sw_config.h"
 
-#include "SAAL_hw_config.h"
+#include "hw_config.h"
 
 #include "stdlib.h"
 #include "assert.h"
@@ -939,6 +939,7 @@ static uint32_t sh_twi_sensor_report_result_ble(int result) {
 
 static uint32_t twi433_ble_request_handler(uint8_t request_type) {
 	twi433_sensor_data_t env_data;
+	/*
 	uint8_t * temp_msg = NULL;
 	temp_msg = (uint8_t *)malloc(sizeof(twi433_sensor_data_t));
 	if(temp_msg == NULL) {
@@ -950,13 +951,93 @@ static uint32_t twi433_ble_request_handler(uint8_t request_type) {
 	memcpy(temp_msg, &env_data, sizeof(twi433_sensor_data_t));
 
 	printf("Sensor Request from BLE Service\r\n");
+*/
 
+	env_data.pressure 		= sh_pressure_get();
+	env_data.humidity 		= sh_humidity_get();
+	
+	env_data.gas_adc_raw	= sh_gas_raw_get();
+	env_data.gas_alg_data	= sh_ccs811_alg_result_data_get();
+	env_data.color 			= sh_color_get();
+
+	#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+	env_data.temperature    = sh_temperature_get();
+	#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
+	//env_data.temperature 	= drv_grid_eye_read_thermistor();
+	env_data.temperature 	= sh_temperature_get();
+	#endif
+	
+	/*
 	env_data.pressure = sh_pressure_get();
 	env_data.humidity = sh_humidity_get();
 	env_data.temperature = sh_temperature_get();
 //	env_data.gas_adc_raw = sh_gas_raw_get();
 	env_data.gas_alg_data = sh_gas_alg_get();
+*/
 
+
+	uint8_t ble_msg[PAAR_PACKET_HEADER_LEN + 25];
+
+	memset(ble_msg, 0, sizeof(ble_msg));
+
+	ble_msg[PAAR_PACKET_INDEX_PACKET_TYPE] = 0x88;
+	ble_msg[PAAR_PACKET_INDEX_SERVICE_ID] = 0x18;
+	ble_msg[PAAR_PACKET_INDEX_SEQUENCE_NUM] = 0x11;
+	ble_msg[PAAR_PACKET_INDEX_DATA_LEN] = 25;
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_CMD] = 0x01;
+
+/*
+	uint8_t report_device_id[4];
+	uint8_t service_id;
+
+	report_device_id[0] = PAAR_ID_0;
+	report_device_id[1] = PAAR_ID_1;
+	report_device_id[2] = PAAR_ID_2;
+	report_device_id[3] = PAAR_ID_3;
+
+	service_id = 0x18;
+
+	memcpy(&mqtt_msg[PAAR_MQTT_INDEX_PAAR_ID], report_device_id, PAAR_ID_SIZE);
+
+	memcpy(&mqtt_msg[PAAR_MQTT_INDEX_SERVCIE_ID], &service_id, PAAR_SERVICE_ID_SIZE);
+
+	mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA_LEN] = 24;
+*/
+	//memcpy(&mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA], &LAP_evt_msg.msg[PAAR_PACKET_HEADER_LEN], 24);
+	uint16_t press_natural = (uint16_t)env_data.pressure;
+	uint16_t press_decimals = (uint16_t)((env_data.pressure * 1000) - ((int)env_data.pressure * 1000));
+	uint16_t tempe_natrual = (uint16_t)env_data.temperature;
+	uint16_t tempe_decimals = (uint16_t)((env_data.temperature * 1000) - ((int)env_data.temperature * 1000));
+
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY] = (char)(press_natural >> 8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+1] = (char)(press_natural & 0xff);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+2] = (char)(press_decimals >> 8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+3] = (char)(press_decimals & 0xff);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+4] = (char)(tempe_natrual >> 8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+5] = (char)(tempe_natrual & 0xff);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+6] = (char)(tempe_decimals >> 8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+7] = (char)(tempe_decimals & 0xff);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+8] = (char)(env_data.humidity >> 8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+9] = (char)(env_data.humidity & 0xff);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+10] = (char)(env_data.gas_adc_raw >> 8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+11] = (char)(env_data.gas_adc_raw & 0xff);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+12] = (char)(env_data.gas_alg_data.ec02_ppm >> 8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+13] = (char)(env_data.gas_alg_data.ec02_ppm & 0xff);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+14] = (char)(env_data.gas_alg_data.tvoc_ppb >> 8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+15] = (char)(env_data.gas_alg_data.tvoc_ppb & 0xff);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+16] = (char)(env_data.color.red >> 8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+17] = (char)(env_data.color.red & 0xff8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+18] = (char)(env_data.color.green >> 8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+19] = (char)(env_data.color.green & 0xff);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+20] = (char)(env_data.color.blue >> 8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+21] = (char)(env_data.color.blue & 0xff);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+22] = (char)(env_data.color.clear >> 8);
+	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+23] = (char)(env_data.color.clear & 0xff);
+
+	//LAP_event_send(SH_TWI_SENSOR_SEND_EVT, TWI433_BLE_ENV_RESPONSE, 0, 0, sizeof(twi433_sensor_data_t), temp_msg);
+	LAP_send_ble_msg_peripheral(ble_msg, PAAR_PACKET_HEADER_LEN + 25);
+
+/*
 	switch( request_type ) {
 	case TWI433_BLE_REQUEST_ALL:
 //		LAP_event_send(SH_TWI_SENSOR_SEND_EVT, TWI433_BLE_ENV_RESPONSE, 0, 0, sizeof(twi433_sensor_data_t), temp_msg);
@@ -969,7 +1050,7 @@ static uint32_t twi433_ble_request_handler(uint8_t request_type) {
 	default:
 		break;
 	}
-
+*/
 	return NRF_SUCCESS;
 }
 //////////////////////////////////////////////
@@ -1026,9 +1107,9 @@ static uint32_t twi_mqtt_log_request_handler(uint8_t request_type) {
 
 	tmp_env_data.pressure = sh_pressure_get();
 	tmp_env_data.humidity = sh_humidity_get();
-	tmp_env_data.humidity += 15;
-	tmp_env_data.temperature = drv_grid_eye_read_thermistor();
-	tmp_env_data.gas_alg_data = sh_gas_alg_get();
+	tmp_env_data.temperature = sh_temperature_get();
+	tmp_env_data.gas_adc_raw = sh_gas_raw_get();
+	tmp_env_data.gas_alg_data = sh_ccs811_alg_result_data_get();
 	tmp_env_data.color = sh_color_get();
 
 	printf("\r\n");
@@ -1152,7 +1233,7 @@ static uint32_t twi_mqtt_log_request_handler(uint8_t request_type) {
 	mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA+22] = (char)(tmp_env_data.color.clear >> 8);
 	mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA+23] = (char)(tmp_env_data.color.clear & 0xff);
 
-//	wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT_ENV, 0, mqtt_msg);
+	wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT_ENV, 0, mqtt_msg);
 
 	/*
 	switch( request_type ) {
@@ -1173,11 +1254,16 @@ static uint32_t twi_mqtt_log_request_handler(uint8_t request_type) {
 //////////////////////////////////////////////
 
 APP_TIMER_DEF(twi_internal_sensor_report_timer);
-#define INTERVAL_SPH_INTERNAL_ENV_SENSOR_REPORT		APP_TIMER_TICKS(10000)
+#define INTERVAL_SPH_INTERNAL_ENV_SENSOR_REPORT		APP_TIMER_TICKS(5000)
 
 static void SPH_internal_env_sensor_check()
 {
-	twi433_event_send(TWI_SENSOR_START, 0, NULL);
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
+	twi433_event_send(TWI_MQTT_LOG_REQUSET, 0, NULL);
+#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+	twi433_event_send(TWI_BLE_REQUEST, 0, NULL);
+#endif
+
 }
 
 #define SUB_BOARD_POWER_CTRL	NRF_GPIO_PIN_MAP(0,13)
@@ -1194,6 +1280,11 @@ void Smart_Hub_Sub_Board_Power_Off() {
 	bsp_busywaitms(500);
 }
 
+
+static void send_twi_sensor_val_by_ble()
+{
+
+}
 
 static void twi433_module_task(void * arg) {
 	ret_code_t err;
@@ -1260,6 +1351,7 @@ static void twi433_module_task(void * arg) {
 				printf("Clear		: [%d]\r\n", env_data.color.clear);
 				printf("\r\n");
 				//////////////////////////////////////////////////////////////////////
+
 
 				break;
 
@@ -1673,7 +1765,9 @@ void twi433_module_task_init(void) {
 
 	nrf_drv_gpiote_init();
 
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
 	Smart_Hub_Sub_Board_Power_On();
+#endif
 
 	bsp_busywaitms(1000);
 	//TWI instance init
@@ -1689,11 +1783,11 @@ void twi433_module_task_init(void) {
 	nrf_gpio_cfg_output(CCS_PWR_CTRL);
 	nrf_gpio_pin_clear(CCS_PWR_CTRL);
 	nrf_gpio_pin_clear(THING_VDD_PWR_CTRL);
-	bsp_busywaitms(200);
+	bsp_busywaitms(1000);
 
 	nrf_gpio_pin_set(THING_VDD_PWR_CTRL);
 	nrf_gpio_pin_set(CCS_PWR_CTRL);	
-	bsp_busywaitms(200);
+	bsp_busywaitms(1000);
 	
 	board_init();
 	

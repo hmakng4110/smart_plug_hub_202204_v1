@@ -55,7 +55,7 @@
 #include "macros_common.h"
 
 #include "hw_config.h"
-#include "SAAL_hw_config.h"
+#include "hw_config.h"
 
 #define THINGY_HW_v0_9_0                    1
 

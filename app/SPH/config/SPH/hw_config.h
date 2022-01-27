@@ -10,6 +10,13 @@
 
 #include "nrf_gpio.h"
 
+#define SAAL_HW_DEVICE_SPH           0
+#define SAAL_HW_DEVICE_AAT           1
+#define SAAL_HW_DEVICE_HAT           2
+#define SAAL_HW_DEVICE_THINGY52      3
+
+#define SAAL_HW_DEVICE_TYPE      SAAL_HW_DEVICE_SPH
+
 #define SPI_SS_PIN		29			//P0.29		nSEL
 #define SPI_MISO_PIN	3			//P0.03		SDO
 #define SPI_MOSI_PIN	4			//P0.04		SDI

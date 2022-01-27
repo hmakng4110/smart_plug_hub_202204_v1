@@ -75,7 +75,7 @@ enum{
 
 #define BLE_DEBUGGING_LED_ENABLE			0
 
-#define PAAR_ID_0					(0x06)
+#define PAAR_ID_0					(0x09)
 #define PAAR_ID_1					(0x00)
 #define PAAR_ID_2					(0x01)
 #define PAAR_ID_3					(0xE0)

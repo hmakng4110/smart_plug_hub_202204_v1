@@ -96,55 +96,27 @@ bool is_test_target_device(LAP_ble_adv_report* pPkt)
 
 void LAP_process_ble_adv_report(LAP_ble_adv_report* pPkt)
 {
-
+	//Do nothing...
 }
 
 static void process_LAP_scan_timeout()
 {
-	uint8_t r;
-	r = processing_BLE_cell_managemnet();
-	printf("BLE Cell Management\r\n");
-
-	//task_sleep(200);
-
-	if(r == 0xFF)
-	{
-		printf("BLE event : Connecting...\r\n");
-	}
-	else
-	{
-		if(get_BLE_cell_management_data_count() < TEST_MAX_CONNECTION_DEVICE)
-			LAP_start_ble_scan(NULL);
-	}
-
-	//app_timer_stop(scan_fail_timeout_timer);
-	//app_timer_start(scan_fail_timeout_timer, APP_TIMER_TICKS(5000), NULL);
+	//Do nothing...
 }
 
 static void processing_LAP_Central_Conn_timeout(LAPEvt_msgt LAP_evt_msg)
 {
-
-	printf("LAP Connect timeout \r\n");
-	BLE_cell_management_connect_timeout();
-
-	LAP_start_ble_scan(NULL);
-
-	//app_timer_stop(scan_fail_timeout_timer);
-	//app_timer_start(scan_fail_timeout_timer, APP_TIMER_TICKS(5000), NULL);
+	//Do nothing...
 }
 
 static void processing_LAP_Central_Scan_timeout(LAPEvt_msgt LAP_evt_msg)
 {
-	while(get_adv_buffer_count() != 0)
-	{
-		task_sleep(10);
-	}
-	process_LAP_scan_timeout();
+	//Do nothing...
 }
 
 static void processing_LAP_Central_Scan_result(LAPEvt_msgt LAP_evt_msg)
 {
-	//nothing...
+	//Do nothing...
 }
 
 uint8_t test_send_count = 0;
@@ -219,78 +191,17 @@ static void send_cccd_handle_enable(uint16_t conn_handle, uint16_t cccd_handle)
 
 static void processing_LAP_Central_Connected(LAPEvt_msgt LAP_evt_msg)
 {
-
-	printf("BLE Central connect\r\n");
-
-	uuidhandle temp_uuid_handle;
-
-	int r;
-	r = BLE_cell_management_current_cccd_handle(&temp_uuid_handle);
-	if(r == -1)
-	{
-		return;
-	}
-
-	//save test_connection_handle
-	cccd_target_connhandle = LAP_evt_msg.conn_handle;
-
-	task_sleep(200);
-
-	//send cccd enable
-	send_cccd_handle_enable(cccd_target_connhandle, temp_uuid_handle.cccd_handle);
-
-	task_sleep(200);
-
-	BLE_cell_management_check_connection(LAP_evt_msg.conn_handle);
-
-	increase_conn_count();
-
-	task_sleep(200);
-
-	LAP_start_ble_scan(NULL);
-
+	//Do nothing...
 }
 
 static void processing_LAP_Central_Disconnected(LAPEvt_msgt LAP_evt_msg)
 {
-	uint8_t index;
-	index = BLE_cell_management_search_data_index_by_connhandle(LAP_evt_msg.conn_handle);
-	if(index != 0xFF)
-	{
-		BLE_cell_management_data_delete(index);
-
-		decrease_conn_count();
-	}
-
-	printf("BLE Disconnected.\r\n");
-
-	task_sleep(200);
-
-	LAP_start_ble_scan(NULL);
+	//Do nothing...
 }
 
 static void processing_LAP_Central_Data_Received(LAPEvt_msgt LAP_evt_msg)
 {
-	printf("BLE receive msg : test_msg  :");
-	uint8_t i;
-	for(i=0; i<LAP_evt_msg.msg_len; i++)
-	{
-		printf(" %02X", LAP_evt_msg.msg[i]);
-	}
-	printf("\r\n");
-
-	uuidhandle profile_data;
-
-	int result;
-
-	result = get_BLE_cell_management_profile_data_by_connhandle(LAP_evt_msg.conn_handle, &profile_data);
-
-	if(result != 0)
-		return;
-
-	task_sleep(5000);
-
-	send_test_msg_central(LAP_evt_msg.conn_handle, profile_data.rx_handle);
+	//Do nothing...
 }
 
 static void processing_LAP_Peripheral_Connected(LAPEvt_msgt LAP_evt_msg)
@@ -327,7 +238,6 @@ static void processing_LAP_Peripheral_Data_Received(LAPEvt_msgt LAP_evt_msg)
 	}
 	printf("\r\n");
 
-	task_sleep(5000);
 //	send_test_msg_peripheral();
 }
 
@@ -335,8 +245,7 @@ static void processing_LAP_Peripheral_CCCD_Enabled(LAPEvt_msgt LAP_evt_msg)
 {
 	printf("BLE CCCD is enabled. \r\n");
 
-//	task_sleep(2000);
-//	send_test_msg_peripheral();
+	task_sleep(100);
 }
 
 static void processing_LAP_Central_event(LAPEvt_msgt LAP_evt_msg)
@@ -437,22 +346,8 @@ void process_ADV_Report(LAP_ble_adv_report* pPkt)
 
 void LAP_Protocol_start_operation()
 {
-
-#if(SW_MODE_DEFAULT == BLE_REF_CENTRAL)
-
-	set_adv_callback_func(process_ADV_Report);
-
-	set_scan_target_paar_id_test();
-
-	task_sleep(1000);
-
-	LAP_start_ble_scan(NULL);
-
-#elif(SW_MODE_DEFAULT == BLE_REF_PERIPHRAL)
 	task_sleep(TEST_ADV_START_DELAY);
 	LAP_start_ble_adv_LIDx();
-#endif
-
 }
 
 void scan_fail_timer_handler()

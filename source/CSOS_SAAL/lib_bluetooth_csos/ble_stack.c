@@ -43,6 +43,8 @@
 #include <sw_config.h>
 #include <hw_config.h>
 
+uint8_t test_flag_sem = 0;
+
 typedef struct
 {
 	uint8_t evt;
@@ -431,6 +433,7 @@ ble_paar_t * get_peripheral_info(void){
 static void on_ble_evt(ble_evt_t * p_ble_evt, void * p_context)
 {
 
+	
 	switch (p_ble_evt->header.evt_id) {
 		/**************************************** Common evt ************************************************************/
 		case BLE_GAP_EVT_CONNECTED:
@@ -476,6 +479,8 @@ static void on_ble_evt(ble_evt_t * p_ble_evt, void * p_context)
 			if( p_timeout->src == BLE_GAP_TIMEOUT_SRC_SCAN )
 			{
 				BLE_process_event_send(BLE_CENTRAL_EVT, BLE_CENTRAL_ST_SCAN_TIMEOUT, BLE_CONN_HANDLE_INVALID, 0, 0, NULL);
+
+
 			}
 			else if( p_timeout->src == BLE_GAP_TIMEOUT_SRC_CONN )
 			{

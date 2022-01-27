@@ -9,6 +9,8 @@
 #include <ubinos/bsp/arch.h>
 #include <ubinos/bsp_ubik.h>
 
+#include "ubinos.h"
+
 #if (CSOS_SAAL__USE_LIB_wifi_wizfi360 == 1)
 
 #include <stdint.h>
@@ -1056,7 +1058,7 @@ static int wizfi360_conn_MQTT(bool authentication, char* broker_ip, uint8_t brok
 #define WIZFI360_SEND_MQTT_ERROR_UNKNOWN 		-3
 #define WIZFI360_SEND_MQTT_ERROR_WRONG_PAR		-4
 
-#define WIZFI360_SEND_MQTT_PAR_SIZE_LIMIT	500
+#define WIZFI360_SEND_MQTT_PAR_SIZE_LIMIT	600
 #define WIZFI360_SEND_MQTT_CMD_SIZE_LIMIT	WIZFI360_SEND_MQTT_PAR_SIZE_LIMIT+20
 
 static int wizfi360_send_mqtt_packet(char* packet, uint8_t packet_len)
@@ -1228,6 +1230,9 @@ static int send_paar_mqtt_msg(uint8_t* msg)
 
 //	uint8_t i;
 	uint8_t data_temp;
+
+	if(msg[PAAR_MQTT_INDEX_BODY_DATA_LEN] >= PAAR_MQTT_PACKET_LENGTH_LIMIT-strlen(temp_packet)-1)
+		return -1;
 
 	for(i=0; i<msg[PAAR_MQTT_INDEX_BODY_DATA_LEN]; i++)
 	{

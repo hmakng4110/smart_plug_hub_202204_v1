@@ -309,21 +309,14 @@ static void processing_LAP_Peripheral_Disconnected(LAPEvt_msgt LAP_evt_msg)
 
 static void processing_LAP_Peripheral_Data_Received(LAPEvt_msgt LAP_evt_msg)
 {
-#if(SP_SW_MODE_SETUP == SP_SW_MODE_TEST_PERIPHERAL)
-	printf("BLE receive msg : test_msg  : %d\r\n", LAP_evt_msg.msg[0]);
-	task_sleep(1000);
-	send_test_msg_peripheral();
-#endif
+
 }
 
 static void processing_LAP_Peripheral_CCCD_Enabled(LAPEvt_msgt LAP_evt_msg)
 {
 	printf("BLE CCCD is enabled. \r\n");
 
-#if(SP_SW_MODE_SETUP == SP_SW_MODE_TEST_PERIPHERAL)
-	task_sleep(2000);
-	send_test_msg_peripheral();
-#endif
+
 }
 
 static void processing_LAP_Central_event(LAPEvt_msgt LAP_evt_msg)
@@ -451,37 +444,6 @@ void LAP_Protocol_start_operation()
 
 	task_sleep(TEST_ADV_START_DELAY);
 	LAP_start_ble_adv_LIDx();
-/*
-#if(SP_SW_MODE_SETUP == SP_SW_MODE_SPH)
-	set_scan_target_paar_id_test();
-
-	while(get_wifi_ready() == false)
-	{
-		task_sleep(100);
-	}
-
-	task_sleep(100);
-
-	LAP_start_ble_scan(NULL);
-
-#elif(SP_SW_MODE_SETUP == SP_SW_MODE_TEST_CENTRAL)
-	set_scan_target_paar_id_test();
-
-//	while(get_wifi_ready() == false)
-//	{
-//		task_sleep(100);
-//	}
-
-	task_sleep(100);
-
-	LAP_start_ble_scan(NULL);
-
-#elif(SP_SW_MODE_SETUP == SP_SW_MODE_TEST_PERIPHERAL)
-	printf("BLE ADV start\r\n");
-	task_sleep(TEST_ADV_START_DELAY);
-	LAP_start_ble_adv_LIDx();
-#endif
-*/
 }
 
 void scan_fail_timer_handler()

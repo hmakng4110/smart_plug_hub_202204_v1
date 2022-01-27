@@ -11,6 +11,7 @@
 
 #define PAAR_DEVICE_NAME                		"AA_TAG" /**< Name of device. Will be included in the advertising data. */
 
+/*
 enum{
 	TEST_DEVICE_TYPE_FAUSET = 0,
 	TEST_DEVICE_TYPE_DRAWER,
@@ -29,16 +30,18 @@ enum{
 #elif(TEST_DEVICE_TYPE == TEST_DEVICE_TYPE_DRAWER || TEST_DEVICE_TYPE == TEST_DEVICE_TYPE_REFRIGATOR)
 #define AAT_SW_MODE				AAT_SW_MODE_GYRO
 #endif
+*/
 
 #define SAAL_DEFAULT_LOCATION_INFO			"테스트룸A_거실_부엌"
 //#define SAAL_DEFAULT_LOCATION_INFO			"테스트룸A_화장실"
 //#define SAAL_DEFAULT_LOCATION_INFO			"테스트룸A_방1"
 
 #define PAAR_ID_0					(0x01)
-#define PAAR_ID_1					(0x00)
-#define PAAR_ID_2					(0x00)
+#define PAAR_ID_1					(0x09)
+#define PAAR_ID_2					(0x09)
 #define PAAR_ID_3					(0xE0)
 
+/*
 #define ADL_DEVICE_TYPE0	0x04
 #define ADL_DEVICE_TYPE1	0x01
 
@@ -48,6 +51,7 @@ enum{
 #define AAT_SW_MODE_NORMAL						0
 
 #define SP_SW_MODE_SETUP							AAT_SW_MODE_NORMAL
+*/
 
 #define TEST_MAX_CONNECTION_DEVICE		3
 
