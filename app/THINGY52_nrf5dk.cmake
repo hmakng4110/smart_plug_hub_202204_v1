@@ -1,4 +1,4 @@
-# ubinos_config_info {"name_base": "AAT", "build_type": "cmake_ubinos", "app": true}
+# ubinos_config_info {"name_base": "THINGY52", "build_type": "cmake_ubinos", "app": true}
 
 set_cache(UBINOS__UBIK__TICK_TYPE "RTC" STRING)
 set_cache(UBINOS__UBIK__TICK_PER_SEC 1024 STRING)

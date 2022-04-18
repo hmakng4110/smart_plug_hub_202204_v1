@@ -84,7 +84,9 @@ void set_flag_MQTT_SERVER_connected(bool enable)
 {
 	flag_MQTT_SERVER_connected = enable;
 }
+/*
 
+*/
 int wifi_processing_event_send(uint8_t evt, uint8_t state, uint8_t * msg) {
 	wifi_processing_msgq_event_t tmp_wifi_processing_msgq_event;
 
@@ -1474,6 +1476,9 @@ static void send_test_mqtt_msg(uint8_t cnt)
 #define WIFI_SETUP_ERROR_RESET		-1
 #define WIFI_SETUP_ERROR_RETRY		-2
 
+/*
+	Wifi module, mqtt topic, 
+*/
 int setup_wifi_mqtt()
 {
 	int err = 0;
@@ -1516,11 +1521,11 @@ int setup_wifi_mqtt()
 	char AP_password[50] = {0, };
 	uint8_t ssid_len, password_len;
 
-	ssid_len = strlen(TEST_AP_SSID);
-	strcpy(AP_ssid, TEST_AP_SSID);
+	ssid_len = strlen(RTLab_502_SSID);
+	strcpy(AP_ssid, RTLab_502_SSID);
 
-	password_len = strlen(TEST_AP_PASSWORD);
-	strcpy(AP_password, TEST_AP_PASSWORD);
+	password_len = strlen(RTLab_AP_PW);
+	strcpy(AP_password, RTLab_AP_PW);
 
 	task_sleep(1000);
 

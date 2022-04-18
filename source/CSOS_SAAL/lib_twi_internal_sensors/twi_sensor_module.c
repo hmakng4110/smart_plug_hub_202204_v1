@@ -1233,7 +1233,11 @@ static uint32_t twi_mqtt_log_request_handler(uint8_t request_type) {
 	mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA+22] = (char)(tmp_env_data.color.clear >> 8);
 	mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA+23] = (char)(tmp_env_data.color.clear & 0xff);
 
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
 	wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT_ENV, 0, mqtt_msg);
+#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+	//something happening
+#endif
 
 	/*
 	switch( request_type ) {

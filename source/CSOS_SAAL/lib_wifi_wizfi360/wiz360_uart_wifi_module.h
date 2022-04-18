@@ -24,8 +24,15 @@
 
 #define WIZFI_MODULE_PWR_ON_DELAY_MS	50
 
-//#define TEST_AP_SSID		"CSOS_AP"
-//#define TEST_AP_PASSWORD	"csoscsos"
+// AP List
+#define CSOS_AP_SSID 	"AP_DEMO"
+#define CSOS_AP_PW		"csos!1234"
+
+#define RTLab_501_SSID	"rtlab501"
+#define RTLab_502_SSID	"rtlab502"
+#define RTLab_504_SSID	"rtlab503"
+#define RTLab_AP_PW		"rtlab!123"
+
 #define TEST_AP_SSID		"AP_DEMO"
 #define TEST_AP_PASSWORD	"csos!1234"
 
