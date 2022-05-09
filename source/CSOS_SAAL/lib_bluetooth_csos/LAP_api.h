@@ -17,9 +17,11 @@
 #include "ble.h"
 #include "sw_config.h"
 
-#define PAAR_ID_SIZE	4
-#define PAAR_SERVICE_ID_SIZE	1
-#define PAAR_PACKET_HEADER_LEN						4
+#define PAAR_ID_SIZE							4
+#define PAAR_SERVICE_ID_SIZE					1
+#define PAAR_PACKET_HEADER_LEN					4
+#define PAAR_ENV_DATA_SIZE						24
+#define PAAR_ADL_DATA_GRID_EYE_DATA_SIZE		4
 
 #define PAAR_PACKET_INDEX_PACKET_TYPE				0
 #define PAAR_PACKET_INDEX_SERVICE_ID				1

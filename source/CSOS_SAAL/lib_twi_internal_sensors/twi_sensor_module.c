@@ -41,6 +41,16 @@
 
 #include "nordic_common.h"
 
+
+
+
+//to prevent overflow of wifi processing task
+extern mutex_pt _g_mutex_wifi_processing;
+
+
+
+
+
 #define IS_SUB_BOARD_CONNECTED 1
 /////////////////////////////////////////
 /////////////////////////////////////////
@@ -370,7 +380,7 @@ static uint32_t sh_environment_enable() {
 		if(err != 0) {
 			break;
 		}
-		task_sleepms(5000);
+		task_sleepms(1000);
 		
 		err = drv_gas_sensor_start(DRV_GAS_SENSOR_MODE_1S);
 		if(err != 0) {
@@ -454,14 +464,16 @@ static float sh_pressure_get(void) {
 	float data_temperature;
 
 	//mutex_lock(_g_mutex_peripheral);
-//	err = drv_pressure_enable();
+	err = drv_pressure_enable();
+	assert(err == 0);
+
 	err = drv_pressure_sample();
 	assert(err == 0);
 
 	data_pressure = drv_pressure_get();
 	data_temperature = drv_pressure_temperature_get();
 
-//	err = drv_pressure_disable();
+	err = drv_pressure_disable();
 //	assert(err == 0);
 	//mutex_unlock(_g_mutex_peripheral);
 
@@ -472,10 +484,17 @@ static int16_t sh_humidity_get(void) {
 	int16_t data_humidity;
 
 	//mutex_lock(_g_mutex_peripheral);
+
+	err = drv_humidity_enable();
+	assert(err == 0);
+
 	err = drv_humidity_sample();
 	assert(err == 0);
 
 	data_humidity = drv_humidity_get();
+	assert(err == 0);
+
+	err = drv_humidity_disable();
 	assert(err == 0);
 	//mutex_unlock(_g_mutex_peripheral);
 
@@ -489,29 +508,48 @@ static float sh_temperature_get(void) {
 	err = drv_humidity_sample();
 	assert(err == 0);
 
-//	data_temperature = drv_pressure_temperature_get();
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
+	data_temperature = drv_grid_eye_read_thermistor();
+#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+	err = drv_humidity_enable();
+	assert(err == 0);
+
 	data_temperature = drv_humidity_temp_get();
 	assert(err == 0);
+
+	err = drv_humidity_disable();
+	assert(err == 0);
+#endif
+//	data_temperature = drv_pressure_temperature_get();
+
 	//mutex_unlock(_g_mutex_peripheral);
 
 	return data_temperature;
 }
 static drv_bh1745_data_t sh_color_get(void) {
+	ret_code_t err;
 	drv_bh1745_data_t data;
 
 	//mutex_lock(_g_mutex_peripheral);
+	err = drv_color_start();
+	assert(err == 0);
+
 	data = sh_bh1745_color_data_get();
 	//mutex_unlock(_g_mutex_peripheral);
+
+	err = drv_color_stop();
+	assert(err == 0);
 
 	return data;
 }
 
 static uint16_t sh_gas_raw_get(void) {
 	ret_code_t err;
-	uint16_t data_gas_raw;
+	uint16_t data_gas_raw = 0;
 	uint8_t dump_gas_selected;
 
 //	mutex_lock(_g_mutex_peripheral);
+//detele later
 	err = drv_gas_sensor_raw_data_get(&dump_gas_selected, &data_gas_raw);
 	assert(err == 0);
 //	mutex_unlock(_g_mutex_peripheral);
@@ -519,7 +557,7 @@ static uint16_t sh_gas_raw_get(void) {
 	return data_gas_raw;
 }
 static drv_ccs811_alg_result_t sh_gas_alg_get(void) {
-
+	ret_code_t err;
 	drv_ccs811_alg_result_t alg_data;
 
 //	mutex_lock(_g_mutex_peripheral);
@@ -860,24 +898,65 @@ static int sh_grid_eye_is_still_moving(int buf[GRID_EYE_PIXEL_ARRAY_SIZE]) {
 }
 static uint32_t sh_grid_eye_report_result_to_mqtt(int result) {
 	ret_code_t err = NRF_SUCCESS;
+	
+	uint8_t * grid_eye_mqtt_msg;
+	grid_eye_mqtt_msg = (uint8_t *)malloc(PAAR_ID_SIZE + PAAR_SERVICE_ID_SIZE + PAAR_ADL_DATA_GRID_EYE_DATA_SIZE);
+
+	uint8_t report_device_id[4];
+	uint8_t service_id;
+
+	report_device_id[0] = PAAR_ID_0;
+	report_device_id[1] = PAAR_ID_1;
+	report_device_id[2] = PAAR_ID_2;
+	report_device_id[3] = PAAR_ID_3;
+
+	service_id = 0x17;
+
+// 0x01 -> Enter, 0x02 -> Exit
+// CSOS Test : Left to Right : Enter, Right to Left : Exit
+/*
+03 : ADL CMD
+
+03 : Device type	(18)
+
+01 : Device Number	(00)(추후 결정)
+
+02 : Action			(01 -> Enter, 02 -> Exit)
+*/
+
+	memcpy(&grid_eye_mqtt_msg[PAAR_MQTT_INDEX_PAAR_ID], report_device_id, PAAR_ID_SIZE);
+
+	memcpy(&grid_eye_mqtt_msg[PAAR_MQTT_INDEX_SERVCIE_ID], &service_id, PAAR_SERVICE_ID_SIZE);
+
+	grid_eye_mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA_LEN] = PAAR_ADL_DATA_GRID_EYE_DATA_SIZE;
+
+	grid_eye_mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA] = 0x03;
+	grid_eye_mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA+1] = 0x18;
+	grid_eye_mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA+2] = 0x01;
 
 	switch(result) {
 	case GRID_EYE_NOTHING:
 		break;
 
 	case GRID_EYE_LEFT_TO_RIGHT:
+		grid_eye_mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA+3] = 0x02;
+		wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT_GRID_EYE, 0, grid_eye_mqtt_msg);
 		//err = uart_wifi_event_send(UART_TWI_GRID_EYE_ALG_RESULT, GRID_EYE_LEFT_TO_RIGHT, NULL);
 		break;
 
 	case GRID_EYE_RIGHT_TO_LEFT:
+		grid_eye_mqtt_msg[PAAR_MQTT_INDEX_BODY_DATA+3] = 0x01;
+		wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT_GRID_EYE, 0, grid_eye_mqtt_msg);
 		//err = uart_wifi_event_send(UART_TWI_GRID_EYE_ALG_RESULT, GRID_EYE_RIGHT_TO_LEFT, NULL);
 		break;
 
 	case GRID_EYE_UP_TO_DOWN:
+		// wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT_GRID_EYE, 0, grid_eye_mqtt_msg);
 		//err = uart_wifi_event_send(UART_TWI_GRID_EYE_ALG_RESULT, GRID_EYE_UP_TO_DOWN, NULL);
 		break;
 
 	case GRID_EYE_DOWN_TO_UP:
+		// wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT_GRID_EYE, 0, grid_eye_mqtt_msg);
 		//err = uart_wifi_event_send(UART_TWI_GRID_EYE_ALG_RESULT, GRID_EYE_DOWN_TO_UP, NULL);
 		break;
 
@@ -957,15 +1036,26 @@ static uint32_t twi433_ble_request_handler(uint8_t request_type) {
 	env_data.humidity 		= sh_humidity_get();
 	
 	env_data.gas_adc_raw	= sh_gas_raw_get();
-	env_data.gas_alg_data	= sh_ccs811_alg_result_data_get();
+	env_data.gas_alg_data	= sh_gas_alg_get();
 	env_data.color 			= sh_color_get();
 
 	#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
 	env_data.temperature    = sh_temperature_get();
 	#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
-	//env_data.temperature 	= drv_grid_eye_read_thermistor();
-	env_data.temperature 	= sh_temperature_get();
+	env_data.temperature 	= drv_grid_eye_read_thermistor();
 	#endif
+
+	printf("Env Data Get\r\n");
+	// printf("\r\n");
+	// printf("Pressure 	: %.3fhpa\r\n", env_data.pressure);
+	// printf("Humidity	: %d%%\r\n", env_data.humidity+15);
+	// printf("Temperature	: %.3fC\r\n", env_data.temperature);
+	// printf("Gas Alg		: ec02:%dppm TVOC:%dppb\r\n", env_data.gas_alg_data.ec02_ppm, env_data.gas_alg_data.tvoc_ppb);
+	// printf("Red			: [%d]\r\n", env_data.color.red);
+	// printf("Green		: [%d]\r\n", env_data.color.green);
+	// printf("Blue		: [%d]\r\n", env_data.color.blue);
+	// printf("Clear		: [%d]\r\n", env_data.color.clear);
+	// printf("\r\n");
 	
 	/*
 	env_data.pressure = sh_pressure_get();
@@ -1035,6 +1125,7 @@ static uint32_t twi433_ble_request_handler(uint8_t request_type) {
 	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+23] = (char)(env_data.color.clear & 0xff);
 
 	//LAP_event_send(SH_TWI_SENSOR_SEND_EVT, TWI433_BLE_ENV_RESPONSE, 0, 0, sizeof(twi433_sensor_data_t), temp_msg);
+	printf("Send BLE MSG\r\n\n");
 	LAP_send_ble_msg_peripheral(ble_msg, PAAR_PACKET_HEADER_LEN + 25);
 
 /*
@@ -1257,8 +1348,9 @@ static uint32_t twi_mqtt_log_request_handler(uint8_t request_type) {
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 
+
 APP_TIMER_DEF(twi_internal_sensor_report_timer);
-#define INTERVAL_SPH_INTERNAL_ENV_SENSOR_REPORT		APP_TIMER_TICKS(5000)
+#define INTERVAL_SPH_INTERNAL_ENV_SENSOR_REPORT		APP_TIMER_TICKS(10000)
 
 static void SPH_internal_env_sensor_check()
 {
@@ -1295,6 +1387,7 @@ static void twi433_module_task(void * arg) {
 	twi433_msgq_event_t twi433_evt_msg;
 	twi433_sensor_data_t env_data;
 
+
 	ble_stack_init_wait();
 
 #if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
@@ -1303,20 +1396,36 @@ static void twi433_module_task(void * arg) {
 		task_sleep(100);
 	}
 #endif
-		
-	task_sleep(500);
-
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+	err = drv_gas_sensor_start(DRV_GAS_SENSOR_MODE_60S);
+#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
 	err = sh_environment_enable();
 	if(err != NRF_SUCCESS) {
 		printf("sh_environment_enable error : %ld\r\n", err);
 		//SH_SystemReset(err);
 	}
+#endif
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
 
 	int task_active_count = 0;
 
+//delete later thingy52 only senses environmental data
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
 	app_timer_create(&twi_internal_sensor_report_timer, APP_TIMER_MODE_REPEATED, SPH_internal_env_sensor_check);
 
 	app_timer_start(twi_internal_sensor_report_timer, INTERVAL_SPH_INTERNAL_ENV_SENSOR_REPORT, NULL);
+#endif
+
+	task_sleep(500);
 
 	for(;;) {
 
@@ -1355,14 +1464,12 @@ static void twi433_module_task(void * arg) {
 				printf("Clear		: [%d]\r\n", env_data.color.clear);
 				printf("\r\n");
 				//////////////////////////////////////////////////////////////////////
-
-
 				break;
 
 			case TWI_BLE_REQUEST:
+				printf("Send Env data to mqtt broker\r\n");
 				twi433_ble_request_handler( twi433_evt_msg.status );
 				break;
-
 			case TWI_SEND_DATA_BY_MQTT_433:
 				twi_433_request_handler( twi433_evt_msg.status );
 				break;
@@ -1380,11 +1487,14 @@ static void twi433_module_task(void * arg) {
 			}
 			app_sched_execute();
 		}
+
+
 		printf("twi task active cnt : [%d]\r\n", task_active_count++);
-		if(task_active_count >= 4) {
-//			SH_SystemReset();
-		}
-		task_sleepms(1000);
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+	task_sleep(10000);
+#elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
+	task_sleep(1000);
+#endif
 	}//end of for(;;)
 }
 
@@ -1436,6 +1546,7 @@ static void sh_grid_eye_monitor_task(void * arg) {
 
 	memset(grid_eye_data_raw, 0, sizeof(grid_eye_data_raw));
 
+
 	ble_stack_init_wait();
 	//uart_wifi_init_wait();
 	/*
@@ -1477,7 +1588,7 @@ static void sh_grid_eye_monitor_task(void * arg) {
 				heat_sensed_threshold++;
 			} else {
 				heat_sensed_threshold++;
-				if(heat_sensed_threshold - heat_sensed_count >= 18) {		//image processing
+				if(heat_sensed_threshold - heat_sensed_count >= GRID_EYE_HEAT_SENSEND_THRESHOLD_CNT) {		//image processing
 					heat_sensed_count = 0;
 					heat_sensed_threshold = 0;
 					result_horzion = sh_grid_eye_list_check_left_right(&grid_eye_data_list_queue_horizon);
@@ -1502,7 +1613,7 @@ static void sh_grid_eye_monitor_task(void * arg) {
 				heat_sensed_threshold++;
 			} else {
 				heat_sensed_threshold++;
-				if(heat_sensed_threshold - heat_sensed_count >= 18) {		//image processing
+				if(heat_sensed_threshold - heat_sensed_count >= GRID_EYE_HEAT_SENSEND_THRESHOLD_CNT) {		//image processing
 					heat_sensed_count = 0;
 					heat_sensed_threshold = 0;
 					result_horzion = sh_grid_eye_list_check_left_right(&grid_eye_data_list_queue_horizon);
@@ -1797,7 +1908,7 @@ void twi433_module_task_init(void) {
 	
 #endif
 
-	bsp_busywaitms(1000);
+	// bsp_busywaitms(1000);
 	
 	//Sensor Init
 	err = sh_environment_init(&twi_433);
@@ -1822,21 +1933,21 @@ void twi433_module_task_init(void) {
 		printf("fail at task_create\r\n");
 	}
 
+/*
 	err = msgq_create(&twi433_sensor_processing_task_msgq, sizeof(twi433_msgq_event_t), 20);
 	if( 0 != err ) {
 		printf("fail at task_create\r\n");
 	}
+*/ 
 
-	
-	/*
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
 	err = task_create(NULL, sh_grid_eye_monitor_task, NULL, task_getmiddlepriority()-2, 1024, "sh_grid_eye_monitor_task");
 	if( 0 != err ) {
 		printf("fail at task_create\r\n");
 	} else {
 		printf("#== SH_GRID_EYE_MONITOR_TASK created\r\n");
 	}
-	*/
-
+#endif
 
 /*
 	err = task_create(NULL, twi433_sensor_processing_task, NULL, task_getmiddlepriority()-3, 512, "twi433_grid_eye_module_task");
@@ -1847,13 +1958,14 @@ void twi433_module_task_init(void) {
 	}
 */
 
-
-	err = task_create(NULL, twi433_module_task, NULL, task_getmiddlepriority()-1, 1024, "twi433_module_task");
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+	err = task_create(NULL, twi433_module_task, NULL, task_getmiddlepriority()+1, 1024, "twi433_module_task");
 	if( 0 != err ) {
 		printf("fail at task_create\r\n");
 	} else {
 		printf("== TWI_MODULE_TASK created\r\n");
 	}
+#endif
 
 	err = mutex_create(&_g_mutex_grid_eye);
 	if( 0 != err ) {

@@ -217,6 +217,27 @@ uint32_t drv_humidity_enable(void)
     return NRF_SUCCESS;
 }
 
+uint32_t drv_humidity_lowpower_enable(void)
+{
+    uint32_t err_code = NRF_SUCCESS;
+
+    if(m_drv_humidity.enabled)
+    {
+        return NRF_SUCCESS;
+    }
+
+    m_drv_humidity.enabled = true;
+
+    static const drv_hts221_cfg_t cfg = {
+        .av_conf  = AV_CONF_REG_DEFAULT,
+        .ctrl_reg1 = (HTS_CTRL_REG1_DEFAULT | (HTS_CTRL_REG1_PD_Active << HTS_CTRL_REG1_PD_Pos)),
+        .ctrl_reg2 =  HTS_CTRL_REG2_DEFAULT,
+        .ctrl_reg3 = (HTS_CTRL_REG3_DEFAULT | (HTS_CTRL_REG3_DRDY_Enable << HTS_CTRL_REG3_DRDY_Pos) | (HTS_CTRL_REG3_DRDY_H_L_ActiveLow << HTS_CTRL_REG3_DRDY_H_L_Pos) )
+    };
+
+    return NRF_SUCCESS;
+}
+
 
 uint32_t drv_humidity_disable(void)
 {
