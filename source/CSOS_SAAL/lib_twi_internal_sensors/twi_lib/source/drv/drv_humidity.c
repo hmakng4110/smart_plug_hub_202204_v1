@@ -271,6 +271,38 @@ uint32_t drv_humidity_disable(void)
     return NRF_SUCCESS;
 }
 
+uint32_t drv_humidity_power_down(void)
+{
+    uint32_t err_code;
+
+    if (m_drv_humidity.enabled == false)
+    {
+        return NRF_SUCCESS;
+    }
+
+    m_drv_humidity.enabled = false;
+
+    gpiote_uninit(m_drv_humidity.cfg.pin_int);
+
+    err_code = drv_hts221_open(&m_drv_humidity.cfg);
+    RETURN_IF_ERROR(err_code);
+
+    static const drv_hts221_cfg_t cfg = {
+        .av_conf   = AV_CONF_REG_DEFAULT,
+        .ctrl_reg1 = (HTS_CTRL_REG1_DEFAULT | (HTS_CTRL_REG1_PD_PowerDown << HTS_CTRL_REG1_PD_Pos)),
+        .ctrl_reg2 =  HTS_CTRL_REG2_DEFAULT,
+        .ctrl_reg3 = (HTS_CTRL_REG3_DEFAULT | (HTS_CTRL_REG3_DRDY_Enable << HTS_CTRL_REG3_DRDY_Pos) | (HTS_CTRL_REG3_DRDY_H_L_ActiveLow << HTS_CTRL_REG3_DRDY_H_L_Pos) )
+    };
+
+    err_code = drv_hts221_cfg_set(&cfg);
+    RETURN_IF_ERROR(err_code);
+
+    err_code = drv_hts221_close();
+    RETURN_IF_ERROR(err_code);
+
+    return NRF_SUCCESS;
+}
+
 
 uint32_t drv_humidity_reset(void)
 {

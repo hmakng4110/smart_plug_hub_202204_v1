@@ -40,7 +40,6 @@
 #include "sw_config.h"
 
 #include "nordic_common.h"
-#include "nrf_delay.h"
 
 
 
@@ -376,7 +375,7 @@ static uint32_t sh_environment_enable() {
 		if(err != 0) {
 			break;
 		}
-		task_sleepms(3000);
+		task_sleepms(1000);
 
 #if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
 		err = drv_gas_sensor_start(DRV_GAS_SENSOR_MODE_60S);
@@ -396,7 +395,7 @@ static uint32_t sh_environment_enable() {
 
 		float temp = sh_temperature_get();	
 
-		drv_gas_sensor_calibrate_humid_temp(humid, temp);
+		drv_gas_sensor_calibrate_humid_temp(humid + 15, temp);
 		if(err != 0) {
 			break;
 		}
@@ -476,7 +475,7 @@ static float sh_pressure_get(void) {
 	data_temperature = drv_pressure_temperature_get();
 
 	err = drv_pressure_disable();
-	assert(err == 0);
+//	assert(err == 0);
 	//mutex_unlock(_g_mutex_peripheral);
 
 	return data_pressure;
@@ -496,8 +495,8 @@ static int16_t sh_humidity_get(void) {
 	data_humidity = drv_humidity_get();
 	assert(err == 0);
 
-	// err = drv_humidity_power_down();
-	// assert(err == 0);
+	err = drv_humidity_disable();
+	assert(err == 0);
 	//mutex_unlock(_g_mutex_peripheral);
 
 	return data_humidity;
@@ -507,21 +506,20 @@ static float sh_temperature_get(void) {
 	float data_temperature;
 
 	//mutex_lock(_g_mutex_peripheral);
-	err = drv_humidity_enable();
-	assert(err == 0);
-
 	err = drv_humidity_sample();
 	assert(err == 0);
 
 #if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_SPH)
 	data_temperature = drv_grid_eye_read_thermistor();
 #elif(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+	err = drv_humidity_enable();
+	assert(err == 0);
 
 	data_temperature = drv_humidity_temp_get();
 	assert(err == 0);
 
-	// err = drv_humidity_power_down();
-	// assert(err == 0);
+	err = drv_humidity_disable();
+	assert(err == 0);
 #endif
 //	data_temperature = drv_pressure_temperature_get();
 
@@ -1139,16 +1137,24 @@ static uint32_t twi433_ble_request_handler(uint8_t request_type) {
 	#endif
 
 	printf("Env Data Get\r\n");
-	printf("\r\n");
-	printf("Pressure 	: %.3fhpa\r\n", env_data.pressure);
-	printf("Humidity	: %d%%\r\n", env_data.humidity+15);
-	printf("Temperature	: %.3fC\r\n", env_data.temperature);
-	printf("Gas Alg		: ec02:%dppm TVOC:%dppb\r\n", env_data.gas_alg_data.ec02_ppm, env_data.gas_alg_data.tvoc_ppb);
-	printf("Red			: [%d]\r\n", env_data.color.red);
-	printf("Green		: [%d]\r\n", env_data.color.green);
-	printf("Blue		: [%d]\r\n", env_data.color.blue);
-	printf("Clear		: [%d]\r\n", env_data.color.clear);
-	printf("\r\n");
+	// printf("\r\n");
+	// printf("Pressure 	: %.3fhpa\r\n", env_data.pressure);
+	// printf("Humidity	: %d%%\r\n", env_data.humidity+15);
+	// printf("Temperature	: %.3fC\r\n", env_data.temperature);
+	// printf("Gas Alg		: ec02:%dppm TVOC:%dppb\r\n", env_data.gas_alg_data.ec02_ppm, env_data.gas_alg_data.tvoc_ppb);
+	// printf("Red			: [%d]\r\n", env_data.color.red);
+	// printf("Green		: [%d]\r\n", env_data.color.green);
+	// printf("Blue		: [%d]\r\n", env_data.color.blue);
+	// printf("Clear		: [%d]\r\n", env_data.color.clear);
+	// printf("\r\n");
+	
+	/*
+	env_data.pressure = sh_pressure_get();
+	env_data.humidity = sh_humidity_get();
+	env_data.temperature = sh_temperature_get();
+//	env_data.gas_adc_raw = sh_gas_raw_get();
+	env_data.gas_alg_data = sh_gas_alg_get();
+*/
 
 
 	uint8_t ble_msg[PAAR_PACKET_HEADER_LEN + 25];
@@ -1209,9 +1215,9 @@ static uint32_t twi433_ble_request_handler(uint8_t request_type) {
 	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+22] = (char)(env_data.color.clear >> 8);
 	ble_msg[PAAR_PACKET_INDEX_BODY_DATA_BODY+23] = (char)(env_data.color.clear & 0xff);
 
-	// LAP_event_send(SH_TWI_SENSOR_SEND_EVT, TWI433_BLE_ENV_RESPONSE, 0, 0, sizeof(twi433_sensor_data_t), temp_msg);
+	//LAP_event_send(SH_TWI_SENSOR_SEND_EVT, TWI433_BLE_ENV_RESPONSE, 0, 0, sizeof(twi433_sensor_data_t), temp_msg);
 	printf("Send BLE MSG\r\n\n");
-	LAP_send_ble_msg_peripheral(ble_msg, PAAR_PACKET_HEADER_LEN + 25);
+	// LAP_send_ble_msg_peripheral(ble_msg, PAAR_PACKET_HEADER_LEN + 25);
 
 /*
 	switch( request_type ) {
@@ -1590,7 +1596,7 @@ static void twi433_sensor_processing_task(void * arg) {
 	twi433_msgq_event_t twi433_sensor_processing_evt_msg;
 
 
-	// ble_stack_init_wait();
+	ble_stack_init_wait();
 	//uart_wifi_init_wait();
 	/*
 	while(get_wifi_ready() == false)
@@ -1737,7 +1743,7 @@ static void sh_grid_eye_monitor_task(void * arg) {
 		task_sleepms(100);
 
 		if(grid_eye_task_active_count % 100 == 0) {
-			// int r = heap_printheapinfo(NULL);
+			int r = heap_printheapinfo(NULL);
 		}
 	}
 

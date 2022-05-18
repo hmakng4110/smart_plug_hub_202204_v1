@@ -95,6 +95,12 @@ uint32_t drv_humidity_enable(void);
  */
 uint32_t drv_humidity_disable(void);
 
+/**@brief Function for set humidity sensor power down
+ *
+ * @retval NRF_SUCCESS             If initialization was successful.
+ */
+uint32_t drv_humidity_power_down(void);
+
 /**@brief Function for resetting the chip to all default register values
 *
 * @retval NRF_SUCCESS             If operation was successful
