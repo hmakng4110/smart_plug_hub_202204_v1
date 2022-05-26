@@ -18,6 +18,13 @@
 // nrf driver include
 #include "nrf_gpio.h"
 
+void AAT_Pin_cfg_init(uint32_t pin_number) {
+	nrf_gpio_cfg(pin_number, NRF_GPIO_PIN_DIR_OUTPUT, NRF_GPIO_PIN_INPUT_DISCONNECT,
+	//						 NRF_GPIO_PIN_NOPULL, NRF_GPIO_PIN_D0S1, NRF_GPIO_PIN_NOSENSE);
+							 NRF_GPIO_PIN_NOPULL, NRF_GPIO_PIN_S0S1, NRF_GPIO_PIN_NOSENSE);
+	nrf_gpio_pin_clear(pin_number);
+}
+
 void AAT_LED_port_init(void) {
 	AAT_Pin_cfg_init(LED_RED);
 	AAT_Pin_cfg_init(LED_GREEN);

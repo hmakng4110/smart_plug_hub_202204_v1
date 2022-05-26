@@ -1,21 +1,20 @@
 /*
   * AAT_main.c
  *
- *  Created on: 2017. 8. 7.
- *      Author: Kwon
+ *  Created on: 2017. 8. 7. . 2022. 05. 20
+ *      Author: Kwon, Yu Jin Park
  */
 
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "hw_config.h"
 #include "sw_config.h"
 
 //nrf_Driver inclde
 #include "nrf_drv_gpiote.h"
-#include "nrf_drv_uart.h"
-#include "nrf_drv_timer.h"
 
 //nrf_library include
 #include "app_uart.h"
@@ -28,60 +27,42 @@
 #include "AAT_driver_i2c.h"
 #include "AAT_driver_spi.h"
 #include "AAT_device_LED.h"
+#include "AAT_device_RTC.h"
 
 #include "AAT_device_BMI160.h"
 #include "AAT_device_OPT3001.h"
 
-#include "LAP_api.h"
+//#include "LAP_api.h"
 #include "ble_stack.h"
 
-// packet index
-#define	HEADER_INDEX						0
-#define	SERVICE_ID_INDEX					1
-#define	SEQ_NUM_INDEX						2
-#define	LEN_INDEX							3
-#define	CMD_INDEX							4
-#define	DEVICETYPE_INDEX					5
+#include "AAT_BLE_Protocol.h"
 
-#define	M2M_HEADER							0x88
-#define WATER_SERVICE_SEQ_NUM				0x11
+static int16_t att_on_check_min, att_on_check_max, att_off_check_min, att_off_check_max;
 
-#define BLE_MAX_PACKET_LEN					19
+static int16_t gyro_x_val_window[DEFAULT_GYRO_DATA_WINDOW_SIZE] = {0, };
+static int16_t gyro_y_val_window[DEFAULT_GYRO_DATA_WINDOW_SIZE] = {0, };
+static int16_t gyro_z_val_window[DEFAULT_GYRO_DATA_WINDOW_SIZE] = {0, };
 
-#define ATT_ACC_ON_CHECK_MIN	3000
-#define ATT_ACC_ON_CHECK_MAX	10000
+static uint16_t gyro_window_index = 0;
+static uint8_t acc_sensor_axis = ATT_ACC_SENSOR_AXIS_DEFAULT;
 
-#define ATT_ACC_OFF_CHECK_MIN	-3000
-#define ATT_ACC_OFF_CHECK_MAX	1500
+static uint16_t sleep_count = 0;
+static uint8_t ATT_sw_mode = AAT_SW_MODE_DEFAULT;
 
-#define ATT_GYRO_ON_CHECK_MIN	100
-#define ATT_GYRO_ON_CHECK_MAX	10000
+static msgq_pt ATT_Main_Msgq;
 
-#define ATT_GYRO_OFF_CHECK_MIN	-10000
-#define ATT_GYRO_OFF_CHECK_MAX	-50
 
-static msgq_pt Main_Msgq;
-
-uint8_t sleep_count = 0;
-#define update_val_sleep_count 100
-
-uint8_t ATT_sw_mode = AAT_DEFUALT_SW_MODE;
+void set_ATT_acc_check_value(int16_t on_check_min, int16_t on_check_max, int16_t off_check_min, int16_t off_check_max)
+{
+	att_on_check_min = on_check_min;
+	att_on_check_max = on_check_max;
+	att_off_check_min = off_check_min;
+	att_off_check_max = off_check_max;
+}
 
 void update_sleep_count()
 {
-	sleep_count = update_val_sleep_count;
-}
-
-//APP_TIMER_DEF(ACC_check_timer_id);
-bool ConnectionFlag = false;
-
-void AAT_send_packet_config(uint8_t water, uint8_t lux, uint8_t *send_packet);
-
-void AAT_Pin_cfg_init(uint32_t pin_number) {
-	nrf_gpio_cfg(pin_number, NRF_GPIO_PIN_DIR_OUTPUT, NRF_GPIO_PIN_INPUT_DISCONNECT,
-	//						 NRF_GPIO_PIN_NOPULL, NRF_GPIO_PIN_D0S1, NRF_GPIO_PIN_NOSENSE);
-							 NRF_GPIO_PIN_NOPULL, NRF_GPIO_PIN_S0S1, NRF_GPIO_PIN_NOSENSE);
-	nrf_gpio_pin_clear(pin_number);
+	sleep_count = UPDATE_VAL_SLEEP_COUNT;
 }
 
 void ACC_init(nrf_drv_gpiote_evt_handler_t gpiote_evt_handler) {
@@ -120,23 +101,10 @@ bool FLASH_init(void) {
 	return AAT_falsh_data_all_erase();
 }
 
-////////////////
-void ACC_check_handler()
-{
-	AAT_Main_event_send(AAT_ACC_EVT, 0, NULL);
-}
-
 void ACC_PIN_Interrupt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
 
 	//Task check INT Check
 	nrf_drv_gpiote_in_event_disable(AAT_BOARD_PIN_ACEEL_INT_1);
-
-	//uint16_t temp_sen_data;
-	//temp_sen_data = BMI160_ACC_DATA_READ_Y_AXIS();
-
-	//AAT_Main_event_send(AAT_ACC_INT_EVT, 0, NULL);
-
-	//nrf_drv_gpiote_in_event_enable(AAT_BOARD_PIN_ACEEL_INT_1, false);
 
 	update_sleep_count();
 }
@@ -149,7 +117,6 @@ void ALS_PIN_Interrupt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t a
 	nrf_drv_gpiote_in_event_enable(AAT_BOARD_ALS_INT, true);
 }
 
-///////////////////////////////////////////////////////////////////////////////////
 void RTC_Interrupt_handler(nrf_drv_gpiote_pin_t pin,
 		nrf_gpiote_polarity_t action) {
 	nrf_drv_gpiote_in_event_disable(AAT_BOARD_RTC_INT);
@@ -157,120 +124,71 @@ void RTC_Interrupt_handler(nrf_drv_gpiote_pin_t pin,
 	nrf_drv_gpiote_in_event_enable(AAT_BOARD_RTC_INT, true);
 }
 
-void send_ATT_result_msg(uint8_t state_val)
+int send_ble_streaming_data(int16_t ACC_X, int16_t ACC_Y, int16_t ACC_Z
+, int16_t GYRO_X, int16_t GYRO_Y, int16_t GYRO_Z)
 {
-	uint8_t light = 0;
-	uint8_t tx_temp_packet[BLE_MAX_PACKET_LEN] = {0, };
+	uint8_t tx_temp_packet[PAAR_SETUP_PACKET_LEN_SENSOR_STREAM] = {0, };
 
-	if(state_val == ANALOG_ADL_ON)
+	tx_temp_packet[PAAR_PACKET_INDEX_PACKET_TYPE] = 0x88;
+	tx_temp_packet[PAAR_PACKET_INDEX_SERVICE_ID] = 0xFE;
+	tx_temp_packet[PAAR_PACKET_INDEX_SEQUENCE_NUM] = 0x11;
+	tx_temp_packet[PAAR_PACKET_INDEX_DATA_LEN] = 13;
+	tx_temp_packet[PAAR_PACKET_INDEX_BODY_DATA_CMD] = 0x07;
+
+	memcpy(&tx_temp_packet[PAAR_SETUP_INDEX_SENSOR_STREAM_ACC_X], &ACC_X, 2);
+	memcpy(&tx_temp_packet[PAAR_SETUP_INDEX_SENSOR_STREAM_ACC_Y], &ACC_Y, 2);
+	memcpy(&tx_temp_packet[PAAR_SETUP_INDEX_SENSOR_STREAM_ACC_Z], &ACC_Z, 2);
+	memcpy(&tx_temp_packet[PAAR_SETUP_INDEX_SENSOR_STREAM_GYRO_X], &GYRO_X, 2);
+	memcpy(&tx_temp_packet[PAAR_SETUP_INDEX_SENSOR_STREAM_GYRO_Y], &GYRO_Y, 2);
+	memcpy(&tx_temp_packet[PAAR_SETUP_INDEX_SENSOR_STREAM_GYRO_Z], &GYRO_Z, 2);
+
+	return LAP_send_ble_msg_peripheral(tx_temp_packet, PAAR_SETUP_PACKET_LEN_SENSOR_STREAM);
+}
+
+int send_ble_streaming_gyro_data(uint16_t gyro_variance)
+{
+	uint8_t tx_temp_packet[PAAR_SETUP_PACKET_LEN_GYRO_STREAM] = {0, };
+
+	tx_temp_packet[PAAR_PACKET_INDEX_PACKET_TYPE] = 0x88;
+	tx_temp_packet[PAAR_PACKET_INDEX_SERVICE_ID] = 0xFE;
+	tx_temp_packet[PAAR_PACKET_INDEX_SEQUENCE_NUM] = 0x11;
+	tx_temp_packet[PAAR_PACKET_INDEX_DATA_LEN] = 3;
+	tx_temp_packet[PAAR_PACKET_INDEX_BODY_DATA_CMD] = 0x09;
+
+	memcpy(&tx_temp_packet[PAAR_PACKET_INDEX_BODY_DATA_BODY], &gyro_variance, 2);
+
+	return LAP_send_ble_msg_peripheral(tx_temp_packet, PAAR_SETUP_PACKET_LEN_GYRO_STREAM);
+}
+
+void set_AAT_SW_mode(uint8_t sw_mode)
+{
+	ATT_sw_mode = sw_mode;
+	switch(ATT_sw_mode)
 	{
-			light = OPT3001_lux_read();
-
-			if(light <= 10)
-				light = LIGHT_OFF;
-			else
-				light = LIGHT_ON;
-
-			memset(tx_temp_packet, 0, BLE_MAX_PACKET_LEN);
-
-/*
-			if(tx_temp_packet == NULL)
-			{
-				AAT_LED_OFF(WHITE);
-				AAT_LED_ON(BLUE);
-				task_sleep(500);
-				AAT_LED_OFF(WHITE);
-				task_sleep(500);
-				AAT_LED_ON(BLUE);
-				task_sleep(500);
-				AAT_LED_OFF(WHITE);
-			}
-*/
-
-			AAT_send_packet_config(ANALOG_ADL_ON, light, tx_temp_packet);	// txpacket malloc 시키기
-
-			LAP_send_ble_msg_peripheral(tx_temp_packet, BLE_MAX_PACKET_LEN);
-			//AAT_BLE_Protocol_event_send(AAT_PERIPHERAL_EVT, AAT_BLE_PERIPHERAL_DATA_SEND_STATE, 0, 0, (uint8_t*)tx_temp_packet);
-
-			AAT_LED_OFF(WHITE);
-			AAT_LED_ON(RED);
-			task_sleep(300);
-			AAT_LED_OFF(WHITE);
-
-			update_sleep_count();
-
-			#if(BLE_DEBUGGING_LED_ENABLE == 1)
-			if(get_ble_peripheral_connected_flag() == true)
-			{
-				AAT_LED_ON(BLUE);
-			}
-			#endif
-
-			task_sleep(100);
-	}
-	else if(state_val == ANALOG_ADL_OFF)
-	{
-			light = OPT3001_lux_read();
-
-			if(light <= 10)
-				light = LIGHT_OFF;
-			else
-				light = LIGHT_ON;
-
-			memset(tx_temp_packet, 0, BLE_MAX_PACKET_LEN);
-
-/*
-			if(tx_temp_packet == NULL)
-			{
-				AAT_LED_OFF(WHITE);
-				AAT_LED_ON(BLUE);
-				task_sleep(500);
-				AAT_LED_OFF(WHITE);
-				task_sleep(500);
-				AAT_LED_ON(BLUE);
-				task_sleep(500);
-				AAT_LED_OFF(WHITE);
-			}
-*/
-			update_sleep_count();
-
-			AAT_send_packet_config(ANALOG_ADL_OFF, light, tx_temp_packet);
-
-			LAP_send_ble_msg_peripheral(tx_temp_packet, BLE_MAX_PACKET_LEN);
-			//AAT_BLE_Protocol_event_send(AAT_PERIPHERAL_EVT, AAT_BLE_PERIPHERAL_DATA_SEND_STATE, 0, 0, (uint8_t*)tx_temp_packet);
-
-			AAT_LED_OFF(WHITE);
-			AAT_LED_ON(RED);
-			task_sleep(300);
-			AAT_LED_OFF(WHITE);
-
-			#if(BLE_DEBUGGING_LED_ENABLE == 1)
-			if(get_ble_peripheral_connected_flag() == true)
-			{
-				AAT_LED_ON(BLUE);
-			}
-			#endif
-
-			task_sleep(100);
+		case AAT_SW_MODE_ACC :
+			sleep_count = ATT_SLEEP_CNT_ACC_MODE;
+			break;
+		case AAT_SW_MODE_GYRO :
+			sleep_count = ATT_SLEEP_CNT_GYRO_MODE;
+			break;
+		case ATT_SW_MODE_SETUP_STREAM_ACC_GYRO_DATA :
+			sleep_count = ATT_SLEEP_CNT_SETUP_MODE;
+			break;
+		case ATT_SW_MODE_SETUP_STREAM_GYRO_WINDOW :
+			sleep_count = ATT_SLEEP_CNT_SETUP_MODE;
+			break;
+		default :
+			break;
 	}
 }
 
-// F3 01 22 58
-void AAT_main_task(void * arg) {
-	int r;
+void set_AAT_default_SW_mode()
+{
+	set_AAT_SW_mode(AAT_SW_MODE_DEFAULT);
+}
 
-	AATMainEvt_t Main_msgRxBuffer;
-	int16_t ACC_Y;
-	int16_t DefaultCalibOn = -1000;
-	int16_t DefaultCalibOff = -1200;
-	bool WaterOnflag = false;
-	int16_t GYRO_test[3];
-
-	int testALS = 0;
-
-	ConnectionFlag = false;
-	CalibMod = true;
-
+void ATT_HW_init()
+{
 	nrf_drv_gpiote_init();
 
 	nrf_gpio_cfg_output(AAT_BOARD_ACCEL_PWR_EN);
@@ -284,11 +202,11 @@ void AAT_main_task(void * arg) {
 
 	OPT3001_init();
 
-	//nrf_gpio_pin_clear(AAT_BOARD_ALS_PWR_EN);
-
 	ACC_init(ACC_PIN_Interrupt_handler);
+}
 
-	task_sleep(1000);
+void ATT_start_signal_led()
+{
 
 	AAT_LED_port_init();
 	AAT_LED_ON(RED);
@@ -303,24 +221,151 @@ void AAT_main_task(void * arg) {
 	task_sleep(500);
 	AAT_LED_OFF(RED);
 	task_sleep(500);
+}
 
+void ATT_set_enter_sleep()
+{
+	AAT_LED_OFF(WHITE);
+	AAT_LED_ON(BLUE);
+	task_sleep(100);
+	AAT_LED_OFF(WHITE);
 
-	uint8_t data_send_state = ANALOG_ADL_OFF;
+	sleep_count = 0;
+	nrf_drv_gpiote_in_event_disable(AAT_BOARD_PIN_ACEEL_INT_1);
+	task_sleep(300);
+	AAT_enter_sleep();
+}
 
-	int16_t temp_sensor_val;
+void Gyro_Data_STREAM_init()
+{
+	uint8_t i;
 
-	int16_t temp_acc_y;
+	gyro_window_index = 0;
 
-	temp_acc_y = 0;
-	temp_sensor_val = 0;
+	for(i=0; i<DEFAULT_ACC_DATA_WINDOW_SIZE; i++)
+	{
+		gyro_x_val_window[i] = 0;
+		gyro_y_val_window[i] = 0;
+		gyro_z_val_window[i] = 0;
+		gyro_window_index++;
+		if(gyro_window_index >= DEFAULT_ACC_DATA_WINDOW_SIZE)
+			gyro_window_index = 0;
+	}
+}
 
-	task_sleep(3000);
+void Read_Gyro_Data_For_STREAM()
+{
+	gyro_x_val_window[gyro_window_index] = BMI160_GYRO_DATA_READ_X_AXIS();
+	gyro_y_val_window[gyro_window_index] = BMI160_GYRO_DATA_READ_Y_AXIS();
+	gyro_z_val_window[gyro_window_index] = BMI160_GYRO_DATA_READ_Z_AXIS();
+
+	gyro_window_index++;
+	if(gyro_window_index >= DEFAULT_ACC_DATA_WINDOW_SIZE)
+			gyro_window_index = 0;
+}
+
+uint16_t Cal_gyro_variance_all()
+{
+	uint16_t var_x, var_y, var_z;
+	uint8_t i, process_index_1, process_index_2;
+
+	var_x = 0;
+	var_y = 0;
+	var_z = 0;
+
+	process_index_1 = gyro_window_index+1;
+	if(process_index_1 >= DEFAULT_ACC_DATA_WINDOW_SIZE)
+		process_index_1 = 0;
+
+	process_index_2 = process_index_1++;
+	if(process_index_2 >= DEFAULT_ACC_DATA_WINDOW_SIZE)
+		process_index_2 = 0;
+
+	for(i= 0; i<DEFAULT_ACC_DATA_WINDOW_SIZE; i++)
+	{
+		var_x += abs(gyro_x_val_window[process_index_2] - gyro_x_val_window[process_index_1]);
+		var_y += abs(gyro_y_val_window[process_index_2] - gyro_y_val_window[process_index_1]);
+		var_z += abs(gyro_z_val_window[process_index_2] - gyro_z_val_window[process_index_1]);
+
+		process_index_1++;
+		if(process_index_1 >= DEFAULT_ACC_DATA_WINDOW_SIZE)
+			process_index_1 = 0;
+
+		process_index_2++;
+		if(process_index_2 >= DEFAULT_ACC_DATA_WINDOW_SIZE)
+			process_index_2 = 0;
+
+	}
+
+	return (var_x + var_y + var_z)/DEFAULT_ACC_DATA_WINDOW_SIZE/NUM_ACC_GYRO_AXIS;
+}
+
+int16_t Read_ACC_sensor_val()
+{
+	switch(acc_sensor_axis)
+	{
+		case AAT_ACC_SENSOR_AXIS_X :
+		{
+			return BMI160_ACC_DATA_READ_X_AXIS();
+		}
+			break;
+		case AAT_ACC_SENSOR_AXIS_Y :
+		{
+			return BMI160_ACC_DATA_READ_Y_AXIS();
+		}
+			break;
+		case AAT_ACC_SENSOR_AXIS_Z :
+		{
+			return BMI160_ACC_DATA_READ_Z_AXIS();
+		}
+			break;
+	}
+
+	
+	return 0;
+}
+
+void AAT_main_task(void * arg) {
+
+	//AATMainEvt_t Main_msgRxBuffer;
+
+	int16_t temp_sensor_val = 0;
+	unsigned int temp_gyro_val = 0;
+
+	//uint8_t gyro_on_count = 5;
+	uint8_t gyro_off_count = GYRO_OFF_COUNT_REFRESH_VAL;
 
 	bool is_AAT_ON = false;
+	int16_t temp_sensor_acc_x, temp_sensor_acc_y, temp_sensor_acc_z;
+	int16_t temp_sensor_gyro_x, temp_sensor_gyro_y, temp_sensor_gyro_z;
+
+	//test code
+	#if 1
+	task_sleep(10000);
+
+	while(1)
+	{
+		task_sleep(5000);
+		send_AAT_result_packet(ANALOG_ADL_ON);
+		task_sleep(5000);
+		send_AAT_result_packet(ANALOG_ADL_OFF);
+	}
+	#endif
+
+	ATT_HW_init();
 
 	task_sleep(1000);
 
-	uint8_t light = LIGHT_OFF;
+	ATT_start_signal_led();
+
+	//test_code : ACC Streaming
+	set_AAT_default_SW_mode();
+
+	if(ATT_sw_mode == ATT_SW_MODE_SETUP_STREAM_GYRO_WINDOW || ATT_sw_mode == AAT_SW_MODE_GYRO)
+		Gyro_Data_STREAM_init();
+
+	set_ATT_acc_check_value(ATT_CHECK_VAL_ON_MIN, ATT_CHECK_VAL_ON_MAX, ATT_CHECK_VAL_OFF_MIN, ATT_CHECK_VAL_OFF_MAX);
+
 
 	while(1)
 	{
@@ -330,42 +375,99 @@ void AAT_main_task(void * arg) {
 		}
 
 		AAT_wake_up();
-		
-		//task_sleep(100);
-
+	
 		switch(ATT_sw_mode)
 		{
 			case AAT_SW_MODE_ACC :
 			{
-				temp_sensor_val = BMI160_ACC_DATA_READ_Y_AXIS();
-				task_sleep(100);
-				if(temp_sensor_val > ATT_ACC_ON_CHECK_MIN && temp_sensor_val < ATT_ACC_ON_CHECK_MAX && is_AAT_ON == false)
+				temp_sensor_val = Read_ACC_sensor_val();
+				if(temp_sensor_val > att_on_check_min && temp_sensor_val < att_on_check_max && is_AAT_ON == false)
 				{
-					send_ATT_result_msg(ANALOG_ADL_ON);
+					send_AAT_result_packet(ANALOG_ADL_ON);
+					update_sleep_count();
 					is_AAT_ON = true;
+					task_sleep(500);
 				}
-				else if(temp_sensor_val <= ATT_ACC_OFF_CHECK_MAX && temp_sensor_val >= ATT_ACC_OFF_CHECK_MIN && is_AAT_ON == true)
+				else if(temp_sensor_val <= att_off_check_max && temp_sensor_val >= att_off_check_min && is_AAT_ON == true)
 				{
-					send_ATT_result_msg(ANALOG_ADL_OFF);
+					send_AAT_result_packet(ANALOG_ADL_OFF);
+					update_sleep_count();
 					is_AAT_ON = false;
+					task_sleep(500);
 				}
+				task_sleep(100);
 			}
 			break;
 			case AAT_SW_MODE_GYRO :
 			{
-				temp_sensor_val = BMI160_GYRO_DATA_READ_Z_AXIS();
-				if(temp_sensor_val > ATT_GYRO_ON_CHECK_MIN && temp_sensor_val < ATT_GYRO_ON_CHECK_MAX && is_AAT_ON == false)
+				Read_Gyro_Data_For_STREAM();
+				temp_gyro_val = Cal_gyro_variance_all();
+				
+				if(temp_gyro_val > GYRO_VARIANCE_THRESHOLD)
 				{
-					send_ATT_result_msg(ANALOG_ADL_ON);
-					is_AAT_ON = true;
-					task_sleep(100);
+					if(is_AAT_ON == false)
+					{
+						printf("ACC On\r\n");
+						send_AAT_result_packet(ANALOG_ADL_ON);
+						is_AAT_ON = true;	
+					}
+
+					gyro_off_count = GYRO_OFF_COUNT_REFRESH_VAL;
+
+					update_sleep_count();
+					task_sleep(TEST_STEAMING_PERIOD);	
 				}
-				else if(temp_sensor_val <= ATT_GYRO_OFF_CHECK_MAX && temp_sensor_val >= ATT_GYRO_OFF_CHECK_MIN && is_AAT_ON == true)
+				else if(temp_gyro_val <= GYRO_VARIANCE_THRESHOLD)
 				{
-					send_ATT_result_msg(ANALOG_ADL_OFF);
-					is_AAT_ON = false;
-					task_sleep(100);
+					if(is_AAT_ON == true && gyro_off_count == 0)
+					{
+						printf("ACC Off\r\n");
+						send_AAT_result_packet(ANALOG_ADL_OFF);
+						is_AAT_ON = false;
+					}
+					
+					if(gyro_off_count > 0)
+					{
+						gyro_off_count--;
+					}
+
+					update_sleep_count();
+					task_sleep(TEST_STEAMING_PERIOD);
 				}
+				task_sleep(100);
+			}
+			break;
+			case ATT_SW_MODE_SETUP_STREAM_ACC_GYRO_DATA :
+			{
+				update_sleep_count();
+
+				temp_sensor_acc_x = BMI160_ACC_DATA_READ_X_AXIS();
+				task_sleep(10);
+				temp_sensor_acc_y = BMI160_ACC_DATA_READ_Y_AXIS();
+				task_sleep(10);
+				temp_sensor_acc_z = BMI160_ACC_DATA_READ_Z_AXIS();
+				task_sleep(10);
+				temp_sensor_gyro_x = BMI160_GYRO_DATA_READ_X_AXIS();
+				task_sleep(10);
+				temp_sensor_gyro_y = BMI160_GYRO_DATA_READ_Y_AXIS();
+				task_sleep(10);
+				temp_sensor_gyro_z = BMI160_GYRO_DATA_READ_Z_AXIS();
+
+				send_ble_streaming_data(temp_sensor_acc_x, temp_sensor_acc_y, temp_sensor_acc_z,
+				 						 temp_sensor_gyro_x, temp_sensor_gyro_y, temp_sensor_gyro_z);
+
+				task_sleep(TEST_STEAMING_PERIOD);
+			}
+			break;
+			case ATT_SW_MODE_SETUP_STREAM_GYRO_WINDOW :
+			{
+				update_sleep_count();
+
+				Read_Gyro_Data_For_STREAM();
+
+				send_ble_streaming_gyro_data(Cal_gyro_variance_all());
+
+				task_sleep(TEST_STEAMING_PERIOD);
 			}
 			break;
 		}
@@ -373,91 +475,29 @@ void AAT_main_task(void * arg) {
 		sleep_count--;
 		if(sleep_count <= 0)
 		{
-			AAT_LED_OFF(WHITE);
-			AAT_LED_ON(BLUE);
-			task_sleep(100);
-			AAT_LED_OFF(WHITE);
-			sleep_count = 0;
-			nrf_drv_gpiote_in_event_disable(AAT_BOARD_PIN_ACEEL_INT_1);
-			task_sleep(300);
-			//nrf_drv_gpiote_in_event_enable(AAT_BOARD_PIN_ACEEL_INT_1, false);
-			AAT_enter_sleep();
-			//nrf_drv_gpiote_in_event_enable(AAT_BOARD_PIN_ACEEL_INT_1, true);
-			//nrf_drv_gpiote_in_event_enable(AAT_BOARD_PIN_ACEEL_INT_1, true);
-		}
-		else if(sleep_count > 200)
-		{
-			AAT_LED_OFF(WHITE);
-			AAT_LED_ON(GREEN);
-			task_sleep(100);
-			AAT_LED_OFF(WHITE);
-			AAT_LED_OFF(WHITE);
-			AAT_LED_ON(GREEN);
-			task_sleep(100);
-			AAT_LED_OFF(WHITE);
-			AAT_LED_OFF(WHITE);
-			AAT_LED_ON(GREEN);
-			task_sleep(100);
-			AAT_LED_OFF(WHITE);
-
-			sleep_count = 0;
-			nrf_drv_gpiote_in_event_disable(AAT_BOARD_PIN_ACEEL_INT_1);
-			task_sleep(300);
-			AAT_enter_sleep();
-			
-			//nrf_drv_gpiote_in_event_enable(AAT_BOARD_PIN_ACEEL_INT_1, false);
+			ATT_set_enter_sleep();
 		}
 	}
 }
 
-void AAT_send_packet_config(uint8_t water, uint8_t lux, uint8_t *send_packet)
-{
-	uint8_t buf[BLE_MAX_PACKET_LEN] = {0,};
-
-	buf[HEADER_INDEX] = M2M_HEADER;
-	buf[SEQ_NUM_INDEX] = WATER_SERVICE_SEQ_NUM;
-	buf[SERVICE_ID_INDEX] = AAT_SERVICE_ID;
-	buf[LEN_INDEX] = 0x04;
-
-	buf[CMD_INDEX] = 0x03;
-
-	buf[CMD_INDEX+1] = ADL_DEVICE_TYPE0;
-	buf[CMD_INDEX+2] = ADL_DEVICE_TYPE1;
-
-	if(water == ANALOG_ADL_ON)
-		buf[CMD_INDEX+3] = ANALOG_ADL_ON;
-	else
-		buf[CMD_INDEX+3] = ANALOG_ADL_OFF;
-
-	memcpy(send_packet, buf, BLE_MAX_PACKET_LEN);
-}
 
 void AAT_main_task_init(void) {
 	int r;
 
-	r = msgq_create(&Main_Msgq, sizeof(AATMainEvt_t), MAIN_MAX_MSGQ_COUNT);
+	r = msgq_create(&ATT_Main_Msgq, sizeof(AATMainEvt_t), MAIN_MAX_MSGQ_COUNT);
 	if (0 != r) {
 		logme("fail at msgq_create\r\n");
 	}
 
-// Task create
+	// Task create
 	r = task_create(NULL, AAT_main_task, NULL, task_gethighestpriority() - 2, 512, "Main");
 	if (r != 0) {
 		printf("task_create(AAT_main_task) failed\n\r");
 	} else {
 		printf("task_create(AAT_main_task) created\n\r");
 	}
-
-/*
-	r = task_create(NULL, ACC_check_task, NULL, task_gethighestpriority() - 3, 512, "ACC_check");
-	if (r != 0) {
-		printf("task_create(AAT_main_task) failed\n\r");
-	} else {
-		printf("task_create(AAT_main_task) created\n\r");
-	}
-	*/
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 uint8_t AAT_Main_event_send(uint8_t Main_evt, uint16_t Main_evt_state,
 		uint8_t* msg) {
 	AATMainEvt_t temp_msg;
@@ -466,31 +506,7 @@ uint8_t AAT_Main_event_send(uint8_t Main_evt, uint16_t Main_evt_state,
 	temp_msg.status = Main_evt_state;
 	temp_msg.msg = msg;
 
-	msgq_send(Main_Msgq, (unsigned char*) &temp_msg);
+	msgq_send(ATT_Main_Msgq, (unsigned char*) &temp_msg);
 
 	return 0;
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void Work_Log_test_code(void) {
-	uint8_t write_buffer_test[16] = { 0, };
-
-	write_buffer_test[0] = 0;
-	write_buffer_test[1] = AAT_Log_Go_into;
-	write_buffer_test[2] = 11;
-	write_buffer_test[3] = 8;
-	write_buffer_test[4] = 11;
-	write_buffer_test[5] = 11;
-	write_buffer_test[6] = 0xB2;
-	write_buffer_test[7] = 0x00;
-	write_buffer_test[8] = 0x7A;
-	write_buffer_test[9] = 0x5C;
-	write_buffer_test[10] = 0x5D;
-	write_buffer_test[11] = 5;
-	write_buffer_test[12] = 8;
-	write_buffer_test[13] = 7;
-	write_buffer_test[14] = 1;
-	write_buffer_test[15] = 2;
-
-	AAT_flash_LOG_data_write(write_buffer_test, 10, 0);
 }

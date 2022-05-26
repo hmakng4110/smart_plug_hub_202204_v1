@@ -346,9 +346,9 @@ void BLE_process_task_init(void){
 
 	r = task_create(NULL, BLE_Process_task, NULL, task_gethighestpriority()-1, 512, NULL);
 	if (r != 0) {
-		printf("== LAP_main_task failed \n\r");
+		printf("== BLE_process_task failed \n\r");
 	} else {
-		printf("== LAP_main_task created \n\r");
+		printf("== BLE_process_task created \n\r");
 	}
 }
 #endif /* APPLICATION_PAAR_FRONTEND_EXE_PAAR_FRONTEND_SRC_BLE_PROCESS_C_ */

@@ -56,8 +56,8 @@ typedef struct
 static msgq_pt ble_rx_msgq;
 
 #define APP_ADV_DURATION                BLE_GAP_ADV_TIMEOUT_GENERAL_UNLIMITED   /**< The advertising time-out (in units of seconds). When set to 0, we will never time out. */
-//800 * 0.625 = 500 ms
-#define APP_ADV_INTERVAL                800                                      /**< The advertising interval (in units of 0.625 ms; this value corresponds to 40 ms). */
+//800 * 0.625 = 500 ms// 240 * 0.625 = 150 ms
+#define APP_ADV_INTERVAL                240//800                                      /**< The advertising interval (in units of 0.625 ms; this value corresponds to 40 ms). */
 
 static uint8_t m_adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET;                   /**< Advertising handle used to identify an advertising set. */
 
@@ -441,6 +441,8 @@ static void on_ble_evt(ble_evt_t * p_ble_evt, void * p_context)
 			uint16_t conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
 			ble_gap_evt_connected_t* p_conn = &(p_ble_evt->evt.gap_evt.params.connected);
 
+			sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_CONN,conn_handle,4);
+
 			if( p_conn->role == BLE_GAP_ROLE_CENTRAL )			// �̵��ܸ�(Smart Tag �Ǵ� Band)�� �����
 			{
 				BLE_process_event_send(BLE_CENTRAL_EVT, BLE_CENTRAL_ST_CONNECTED, conn_handle, 0, 0, NULL);
@@ -717,6 +719,8 @@ static void PAAR_scan_init(void)
     err_code = nrf_ble_scan_init(&m_scan, &init_scan, PAAR_scan_evt_handler);
     APP_ERROR_CHECK(err_code);
 
+	sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_SCAN_INIT,0,4);
+
 }
 
 /**@brief Function for starting advertising.
@@ -777,6 +781,8 @@ static void PAAR_advertising_init(void)
     APP_ERROR_CHECK(err_code);
 
     is_advertising_init = true;
+
+	sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_ADV,m_adv_handle,4);
 }
 
 /**@brief Function for ble stack task.
@@ -805,7 +811,13 @@ void ble_stack_task(void * arg) {
 	conn_params_init();
 
 	//setup tx power : 4dBm
-	sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_CONN,0,-30);
+	/*
+	sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_ADV,0,0);
+	sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_SCAN_INIT,0,4);
+	sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_CONN,0,4);
+	*/
+
+	sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_CONN,BLE_CONN_HANDLE_INVALID,4);
 
 	//set flag : ble stack init complete
 	set_ble_stack_init_flag(true);

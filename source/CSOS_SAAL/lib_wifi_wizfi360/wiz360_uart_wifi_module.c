@@ -53,7 +53,10 @@ static bool flag_AP_connected = false;
 static bool flag_MQTT_SERVER_connected = false;
 static bool flag_wifi_ready = false;
 
+static int mqtt_retry_count = 0;
+
 APP_TIMER_DEF(mqtt_hb_timer);
+APP_TIMER_DEF(time_sync_timer);
 
 void set_wifi_ready(bool val)
 {
@@ -380,8 +383,14 @@ static int wizfi360_reset_module()
 	strcpy((char*)temp_cmd_buf, "AT+RST\r\n");
 	temp_cmd_len = strlen("AT+RST\r\n");
 
+	uint16_t test_uart_cnt = 1000;
 	while (nrf_drv_uart_tx_in_progress(&wizfi360_uart_instance)) {
 		task_sleep(10);
+		test_uart_cnt--;
+		if(test_uart_cnt <= 0)
+		{
+			bsp_abortsystem();
+		}
 	}
 	nrf_drv_uart_tx(&wizfi360_uart_instance, temp_cmd_buf, temp_cmd_len);
 
@@ -453,9 +462,16 @@ static int wizfi360_set_mode(uint8_t mode)
 		return WIZFI360_SET_MODE_ERROR_WRONG_PAR;
 	}
 
+	uint16_t test_uart_cnt = 1000;
 	while (nrf_drv_uart_tx_in_progress(&wizfi360_uart_instance)) {
 		task_sleep(10);
+		test_uart_cnt--;
+		if(test_uart_cnt <= 0)
+		{
+			bsp_abortsystem();
+		}
 	}
+
 	nrf_drv_uart_tx(&wizfi360_uart_instance, temp_cmd_buf, temp_cmd_len);
 
 	err = msgq_receive_timed(wizfi360_wifi_response_msgq, (unsigned char*) &wizfi360_rsp_evt_msg, WIZFI360_SET_MODE_TIMEOUT);
@@ -567,9 +583,16 @@ static int wizfi360_enable_DHCP(uint8_t mode, uint8_t enable)
 		break;
 	}
 
+	uint16_t test_uart_cnt = 1000;
 	while (nrf_drv_uart_tx_in_progress(&wizfi360_uart_instance)) {
 		task_sleep(10);
+		test_uart_cnt--;
+		if(test_uart_cnt <= 0)
+		{
+			bsp_abortsystem();
+		}
 	}
+
 	nrf_drv_uart_tx(&wizfi360_uart_instance, temp_cmd_buf, temp_cmd_len);
 
 	err = msgq_receive_timed(wizfi360_wifi_response_msgq, (unsigned char*) &wizfi360_rsp_evt_msg, WIZFI360_SET_MODE_TIMEOUT);
@@ -600,6 +623,8 @@ static int wizfi360_enable_DHCP(uint8_t mode, uint8_t enable)
 }
 
 #define WIZFI360_CONN_AP_TIMEOUT 			120000 //2 min
+
+//#define WIZFI360_CONN_AP_TIMEOUT 			10000 //10 sec
 
 #define WIZFI360_CONN_AP_SUCCESS			0
 #define WIZFI360_CONN_AP_ERROR_ERROR		-1
@@ -645,9 +670,16 @@ static int wizfi360_connect_AP(char* ssid, uint8_t ssid_len, char* password, uin
 
 	temp_cmd_len = strlen((char*)temp_cmd_buf);
 
+	uint16_t test_uart_cnt = 1000;
 	while (nrf_drv_uart_tx_in_progress(&wizfi360_uart_instance)) {
 		task_sleep(10);
+		test_uart_cnt--;
+		if(test_uart_cnt <= 0)
+		{
+			bsp_abortsystem();
+		}
 	}
+
 	nrf_drv_uart_tx(&wizfi360_uart_instance, temp_cmd_buf, temp_cmd_len);
 
 	err = msgq_receive_timed(wizfi360_wifi_response_msgq, (unsigned char*) &wizfi360_rsp_evt_msg, WIZFI360_CONN_AP_TIMEOUT);
@@ -737,9 +769,16 @@ static int wizfi360_setup_MQTT(char* user_name, uint8_t user_name_len, char* use
 
 	temp_cmd_len = strlen((char*)temp_cmd_buf);
 
+	uint16_t test_uart_cnt = 1000;
 	while (nrf_drv_uart_tx_in_progress(&wizfi360_uart_instance)) {
 		task_sleep(10);
+		test_uart_cnt--;
+		if(test_uart_cnt <= 0)
+		{
+			bsp_abortsystem();
+		}
 	}
+
 	nrf_drv_uart_tx(&wizfi360_uart_instance, temp_cmd_buf, temp_cmd_len);
 
 	err = msgq_receive_timed(wizfi360_wifi_response_msgq, (unsigned char*) &wizfi360_rsp_evt_msg, WIZFI360_SETUP_MQTT_TIMEOUT);
@@ -789,8 +828,14 @@ static int wizfi360_setup_SNTP()
 
 	strcpy((char*)temp_cmd_buf, "AT+CIPSNTPCFG=1,9\r\n");
 
+	uint16_t test_uart_cnt = 1000;
 	while (nrf_drv_uart_tx_in_progress(&wizfi360_uart_instance)) {
 		task_sleep(10);
+		test_uart_cnt--;
+		if(test_uart_cnt <= 0)
+		{
+			bsp_abortsystem();
+		}
 	}
 
 	temp_cmd_len = strlen((char*)temp_cmd_buf);
@@ -850,8 +895,14 @@ static int wizfi360_set_time()
 
 	strcpy((char*)temp_cmd_buf, "AT+CIPSNTPTIME?\r\n");
 
+	uint16_t test_uart_cnt = 1000;
 	while (nrf_drv_uart_tx_in_progress(&wizfi360_uart_instance)) {
 		task_sleep(10);
+		test_uart_cnt--;
+		if(test_uart_cnt <= 0)
+		{
+			bsp_abortsystem();
+		}
 	}
 
 	temp_cmd_len = strlen((char*)temp_cmd_buf);
@@ -936,8 +987,14 @@ static int wizfi360_setup_MQTT_topic(char* publish_topic, uint8_t publish_topic_
 
 	temp_cmd_len = strlen((char*)temp_cmd_buf);
 
+	uint16_t test_uart_cnt = 1000;
 	while (nrf_drv_uart_tx_in_progress(&wizfi360_uart_instance)) {
 		task_sleep(10);
+		test_uart_cnt--;
+		if(test_uart_cnt <= 0)
+		{
+			bsp_abortsystem();
+		}
 	}
 	nrf_drv_uart_tx(&wizfi360_uart_instance, temp_cmd_buf, temp_cmd_len);
 
@@ -1021,8 +1078,14 @@ static int wizfi360_conn_MQTT(bool authentication, char* broker_ip, uint8_t brok
 
 	temp_cmd_len = strlen((char*)temp_cmd_buf);
 
+	uint16_t test_uart_cnt = 1000;
 	while (nrf_drv_uart_tx_in_progress(&wizfi360_uart_instance)) {
 		task_sleep(10);
+		test_uart_cnt--;
+		if(test_uart_cnt <= 0)
+		{
+			bsp_abortsystem();
+		}
 	}
 	nrf_drv_uart_tx(&wizfi360_uart_instance, temp_cmd_buf, temp_cmd_len);
 
@@ -1050,7 +1113,7 @@ static int wizfi360_conn_MQTT(bool authentication, char* broker_ip, uint8_t brok
 	}
 }
 
-#define WIZFI360_SEND_MQTT_TIMEOUT 			20000
+#define WIZFI360_SEND_MQTT_TIMEOUT 			10000
 
 #define WIZFI360_SEND_MQTT_SUCCESS				0
 #define WIZFI360_SEND_MQTT_ERROR_ERROR			-1
@@ -1089,17 +1152,29 @@ static int wizfi360_send_mqtt_packet(char* packet, uint8_t packet_len)
 
 	temp_cmd_len = strlen((char*)temp_cmd_buf);
 
+	uint16_t test_uart_cnt = 1000;
 	while (nrf_drv_uart_tx_in_progress(&wizfi360_uart_instance)) {
 		task_sleep(10);
+		test_uart_cnt--;
+		if(test_uart_cnt <= 0)
+		{
+			bsp_abortsystem();
+		}
 	}
 
 	nrf_drv_uart_tx(&wizfi360_uart_instance, (uint8_t*)temp_cmd_buf, temp_cmd_len);
 
+	test_uart_cnt = 1000;
 	while (nrf_drv_uart_tx_in_progress(&wizfi360_uart_instance)) {
 		task_sleep(10);
+		test_uart_cnt--;
+		if(test_uart_cnt <= 0)
+		{
+			bsp_abortsystem();
+		}
 	}
 
-	err = msgq_receive_timed(wizfi360_wifi_response_msgq, (unsigned char*) &wizfi360_rsp_evt_msg, WIZFI360_CONN_AP_TIMEOUT);
+	err = msgq_receive_timed(wizfi360_wifi_response_msgq, (unsigned char*) &wizfi360_rsp_evt_msg, WIZFI360_SEND_MQTT_TIMEOUT);
 	switch(err)
 	{
 	case UBIK_ERR__SUCCESS :
@@ -1147,10 +1222,11 @@ static int send_paar_mqtt_HB_msg()
 	err = wizfi360_send_mqtt_packet(temp_packet, temp_cmd_len);
 	if(err != WIZFI360_SEND_MQTT_SUCCESS)
 	{
-		set_wifi_ready(false);
-		wifi_processing_event_send(WIFI_PROCESSING_EVENT_ERROR_RESET, 0, NULL);
+		//set_wifi_ready(false);
+		//wifi_processing_event_send(WIFI_PROCESSING_EVENT_ERROR_RESET, 0, NULL);
+		wifi_restart();
 
-		return -1;
+		return -2;
 	}
 
 	return 0;
@@ -1218,7 +1294,21 @@ static int send_paar_mqtt_msg(uint8_t* msg)
 
 	//Set Location
 	strcat(temp_packet, "\"LOCATION\":\"");
-	strcat(temp_packet, SP_LOCATION);
+
+	memset(temp_id_char, 0, TEMP_ID_BUFFER_SIZE);
+	uint8_t body_data_len = msg[PAAR_MQTT_INDEX_BODY_DATA_LEN];
+	uint8_t locaion_data_len = msg[PAAR_MQTT_INDEX_BODY_DATA+body_data_len];
+
+	if(locaion_data_len >= TEMP_ID_BUFFER_SIZE-1)
+	{
+		printf("Location Data Size is Over!!\r\n");
+		return -1;
+	}
+
+	memcpy(temp_id_char, &msg[PAAR_MQTT_INDEX_BODY_DATA + body_data_len+1], locaion_data_len);
+
+	strcat(temp_packet, temp_id_char);
+	
 	strcat(temp_packet, "\",");
 
 	//Set Time
@@ -1232,7 +1322,11 @@ static int send_paar_mqtt_msg(uint8_t* msg)
 	uint8_t data_temp;
 
 	if(msg[PAAR_MQTT_INDEX_BODY_DATA_LEN] >= PAAR_MQTT_PACKET_LENGTH_LIMIT-strlen(temp_packet)-1)
+	{
+		printf("PAAR_MQTT_INDEX_BODY_DATA_LEN is over. \r\n");
 		return -1;
+	}
+		
 
 	for(i=0; i<msg[PAAR_MQTT_INDEX_BODY_DATA_LEN]; i++)
 	{
@@ -1254,10 +1348,11 @@ static int send_paar_mqtt_msg(uint8_t* msg)
 	err = wizfi360_send_mqtt_packet(temp_packet, temp_cmd_len);
 	if(err != WIZFI360_SEND_MQTT_SUCCESS)
 	{
-		set_wifi_ready(false);
-		wifi_processing_event_send(WIFI_PROCESSING_EVENT_ERROR_RESET, 0, NULL);
+		//set_wifi_ready(false);
+		//wifi_processing_event_send(WIFI_PROCESSING_EVENT_ERROR_RESET, 0, NULL);
+		wifi_restart();
 
-		return -1;
+		return -2;
 	}
 
 	return 0;
@@ -1325,7 +1420,38 @@ static int send_paar_mqtt_msg_env(uint8_t* msg)
 
 	//Set Location
 	strcat(temp_packet, "\"LOCATION\":\"");
-	strcat(temp_packet, SP_LOCATION);
+
+	uint8_t body_data_len = msg[PAAR_MQTT_INDEX_BODY_DATA_LEN];
+	uint8_t locaion_data_len = msg[PAAR_MQTT_INDEX_BODY_DATA+body_data_len];
+
+	memcpy(temp_id_char, &msg[PAAR_MQTT_INDEX_BODY_DATA + body_data_len+1], locaion_data_len);
+
+	strcat(temp_packet, temp_id_char);
+	
+	/*
+	if(msg[PAAR_MQTT_INDEX_PAAR_ID+1] == 0x01 && msg[PAAR_MQTT_INDEX_PAAR_ID] == 0xEC )
+	{
+		strcat(temp_packet, "Professor_LIVING");
+	}
+	else if(msg[PAAR_MQTT_INDEX_PAAR_ID+1] == 0x02 && msg[PAAR_MQTT_INDEX_PAAR_ID] == 0xEC )
+	{
+		strcat(temp_packet, "Professor_TOILET");
+	}
+	else if(msg[PAAR_MQTT_INDEX_PAAR_ID+1] == 0x03 && msg[PAAR_MQTT_INDEX_PAAR_ID] == 0xEC )
+	{
+		strcat(temp_packet, "Professor_ROOM");
+	}
+	else if(msg[PAAR_MQTT_INDEX_PAAR_ID+1] == 0x02 && msg[PAAR_MQTT_INDEX_PAAR_ID] == 0xE0 )
+	{
+		strcat(temp_packet, "Professor_TOILET");
+	}	
+	else
+	{
+		strcat(temp_packet, SAAL_LOCATION);		
+	}
+	*/
+
+
 	strcat(temp_packet, "\",");
 
 	//Set Time
@@ -1358,10 +1484,10 @@ static int send_paar_mqtt_msg_env(uint8_t* msg)
 	err = wizfi360_send_mqtt_packet(temp_packet, temp_cmd_len);
 	if(err != WIZFI360_SEND_MQTT_SUCCESS)
 	{
-		set_wifi_ready(false);
-		wifi_processing_event_send(WIFI_PROCESSING_EVENT_ERROR_RESET, 0, NULL);
-
-		return -1;
+		//set_wifi_ready(false);
+		//wifi_processing_event_send(WIFI_PROCESSING_EVENT_ERROR_RESET, 0, NULL);
+		wifi_restart();
+		return -2;
 	}
 
 	return 0;
@@ -1615,12 +1741,85 @@ static void mqtt_hb_handler()
 wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT_HB, 0, NULL);
 }
 
-#define MQTT_HB_TICK_EVENT_INTERVAL     APP_TIMER_TICKS(60000)
+#define MQTT_HB_TICK_EVENT_INTERVAL     APP_TIMER_TICKS(30000)
+
+#define TIME_SYNCE_EVENT_INTERVAL		APP_TIMER_TICKS(3600000)
+
+uint8_t time_sync_cnt = 24;
+
+void time_sync_handler()
+{
+	wizfi360_set_time();
+}
+
+int wifi_restart()
+{
+	set_wifi_ready(false);
+
+	printf("wifi_restart\r\n");
+
+	printf("wifi uart uninit\r\n");
+	nrf_drv_uart_uninit(&wizfi360_uart_instance);
+	task_sleep(200);
+
+	printf("wifi enable\r\n");
+
+	//stop_mqtt_send_timeout();
+
+	app_timer_stop(mqtt_hb_timer);
+	
+	printf("wifi reset\r\n");
+
+	nrf_gpio_pin_clear(WIZFI_WAKE_UP);
+
+	task_sleep(100);
+
+	uart_wifi_reset();
+
+	task_sleep(200);
+
+	uart_wifi_enable();
+
+	task_sleep(200);
+
+	printf("wifi uart init\r\n");
+	wizfi_uart_init();
+
+	task_sleep(1000);
+
+	wizfi360_uart_rsp_buffer_idx = 0;
+	wizfi360_uart_rsp_buffer_count = 0;
+	uint8_t i =0;
+
+	printf("wifi uart buffer init\r\n");
+	for(i = 0; i<UART_WIFI_RSP_BUF_MAX_COUNT; i++ )
+	{
+		memset(&wizfi360_uart_rsp_buffer[i][0], 0, UART_WIFI_RSP_BUF_SIZE);
+	}
+	
+	while(WIFI_SETUP_ERROR_RESET == setup_wifi_mqtt())
+	{
+		mqtt_retry_count++;
+		if(mqtt_retry_count >= MQTT_RESET_MAX_COUNT)
+		{
+			printf("wifi reset error : abort_system\r\n");
+			bsp_abortsystem();
+		}
+			
+		
+		uart_wifi_reset();
+	}
+	
+	mqtt_retry_count = 0;
+
+	app_timer_start(mqtt_hb_timer, MQTT_HB_TICK_EVENT_INTERVAL, NULL);
+
+	return 0;
+}
 
 static void wizfi360_wifi_processing_task(void * arg) {
 
 	int err = 0;
-	int mqtt_retry_count = 0;
 
 	ble_stack_init_wait();
 
@@ -1648,8 +1847,10 @@ static void wizfi360_wifi_processing_task(void * arg) {
 	app_timer_init();
 
 	app_timer_create(&mqtt_hb_timer, APP_TIMER_MODE_SINGLE_SHOT, mqtt_hb_handler);
+	app_timer_create(&time_sync_timer, APP_TIMER_MODE_REPEATED, time_sync_handler);
 
 	app_timer_start(mqtt_hb_timer, MQTT_HB_TICK_EVENT_INTERVAL, NULL);
+	app_timer_start(time_sync_timer, TIME_SYNCE_EVENT_INTERVAL, NULL);
 
 	while(1)
 	{
@@ -1662,15 +1863,17 @@ static void wizfi360_wifi_processing_task(void * arg) {
 			switch( wifi_processing_evt_msg.event ) {
 			case WIFI_PROCESSING_EVENT_SEND_MQTT_ENV :
 			{
+				/*
 				if(get_wifi_ready() == false)
 				{
 					break;
 				}
+				*/
 
 				task_sleep(200);
 				int r;
 				r = send_paar_mqtt_msg_env(wifi_processing_evt_msg.msg);
-				if(r != 0)
+				if(r == -2)
 				{
 					uint8_t* temp_buffer = NULL;
 					temp_buffer = malloc(wifi_processing_evt_msg.msg[PAAR_MQTT_INDEX_BODY_DATA_LEN] + 5);
@@ -1681,20 +1884,35 @@ static void wizfi360_wifi_processing_task(void * arg) {
 						wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT_ENV, 0, temp_buffer);
 					}
 				}
+				else
+				{
+					stop_mqtt_send_timeout();
+
+					app_timer_stop(mqtt_hb_timer);
+					app_timer_start(mqtt_hb_timer, MQTT_HB_TICK_EVENT_INTERVAL, NULL);
+				}
+
+				heap_printheapinfo(NULL);
+
 				break;
 			}
 			case WIFI_PROCESSING_EVENT_SEND_MQTT :
 			{
 				if(get_wifi_ready() == false)
 				{
+					printf("wifi is not ready!!\r\n");
 					break;
 				}
 
 				task_sleep(200);
 				int r;
+
+				printf("send_paar_mqtt_msg \r\n");
+
 				r = send_paar_mqtt_msg(wifi_processing_evt_msg.msg);
-				if(r != 0)
+				if(r == -2)
 				{
+					printf("error : send paar mqtt msg\r\n");
 					uint8_t* temp_buffer = NULL;
 					temp_buffer = malloc(wifi_processing_evt_msg.msg[PAAR_MQTT_INDEX_BODY_DATA_LEN] + 5);
 					memset(temp_buffer, 0, wifi_processing_evt_msg.msg[PAAR_MQTT_INDEX_BODY_DATA_LEN] + 5);
@@ -1703,11 +1921,27 @@ static void wizfi360_wifi_processing_task(void * arg) {
 						memcpy(temp_buffer, wifi_processing_evt_msg.msg, wifi_processing_evt_msg.msg[PAAR_MQTT_INDEX_BODY_DATA_LEN] + 5);
 						wifi_processing_event_send(WIFI_PROCESSING_EVENT_SEND_MQTT, 0, temp_buffer);
 					}
+					else
+					{
+						printf("error : malloc, send paar mqtt msg\r\n");
+					}
 				}
+				else
+				{
+					printf("success : send_paar_mqtt_msg\r\n");
+					stop_mqtt_send_timeout();
+
+					app_timer_stop(mqtt_hb_timer);
+					app_timer_start(mqtt_hb_timer, MQTT_HB_TICK_EVENT_INTERVAL, NULL);
+				}
+
+				heap_printheapinfo(NULL);
 			}
 				break;
 			case WIFI_PROCESSING_EVENT_ERROR_RESET :
 			{
+				stop_mqtt_send_timeout();
+
 				app_timer_stop(mqtt_hb_timer);
 				set_wifi_ready(false);
 
@@ -1738,10 +1972,14 @@ static void wizfi360_wifi_processing_task(void * arg) {
 		}
 
 
-		task_sleep(500);
+		task_sleep(100);
 
 		if(wifi_processing_evt_msg.msg != NULL)
+		{
+			printf("free : wifi_processing_evt_msg.msg \r\n");
 			free(wifi_processing_evt_msg.msg);
+		}
+			
 	}
 }
 
@@ -1775,6 +2013,8 @@ static void wizfi360_uart_rx_task(void * arg) {
 				//"ERROR"
 				else if(strcmp(&wizfi360_uart_rsp_buffer[uart_wifi_evt_msg.status][0], "ERROR\r\n") == 0)
 				{
+					//wifi_processing_event_send(WIFI_PROCESSING_EVENT_ERROR_RESET, 0, NULL);
+					wifi_restart();
 					wizfi360_response_event_send(WIZFI360_RSP_EVENT_ERROR, 0, (uint8_t*)NULL);
 				}
 				//"FAIL"

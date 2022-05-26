@@ -16,9 +16,11 @@
 #include <lib_bluetooth_csos/ble_profile.h>
 #include <lib_bluetooth_csos/ble_stack.h>
 #include <lib_bluetooth_csos/LAP_api.h>
+
 #include "LAP_main.h"
 
-#include "twi_sensor_module.h"
+//#include "twi_sensor_module.h"
+#include "SPH_environment_sensor.h"
 
 #include "lib_433_comm/sh_uart_433_module.h"
 
@@ -40,12 +42,6 @@ int appmain(int argc, char *argv[]) {
 		NVIC_SystemReset();
 	}
 
-	printf("\r\n\n\n");
-	printf("================================================================================\r\n");
-	printf("SMART_HUB_BOARD_1.0 (build time: %s %s)\r\n", __TIME__, __DATE__);
-	printf("================================================================================\r\n");
-	printf("\r\n\n");
-
 	BLE_stack_task_init();
 
 	BLE_process_task_init();
@@ -54,10 +50,14 @@ int appmain(int argc, char *argv[]) {
 
 #if(SP_SW_MODE_SETUP == SP_SW_MODE_SPH)
 	uart_wifi_module_task_init();
-#endif
 
+	#if(SP_ENVIRONMENT_DATA_REPORT_ENABLE == 1)
 	//test code
-	twi433_module_task_init();
+	//twi433_module_task_init();
+	SPH_envrionment_report_task_init();
+	#endif
+	
+#endif
 
 	ubik_comp_start();
 
