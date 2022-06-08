@@ -1601,17 +1601,17 @@ int setup_wifi_mqtt()
     char AP_password[50] = {0, };
     uint8_t ssid_len, password_len;
     
-    ssid_len = strlen(CSOS_AP_SSID);
-    strcpy(AP_ssid, CSOS_AP_SSID);
+    // ssid_len = strlen(CSOS_AP_SSID);
+    // strcpy(AP_ssid, CSOS_AP_SSID);
 
-    password_len = strlen(CSOS_AP_PW);
-    strcpy(AP_password, CSOS_AP_PW);
+    // password_len = strlen(CSOS_AP_PW);
+    // strcpy(AP_password, CSOS_AP_PW);
 
-    // ssid_len = strlen(RTLab_502_SSID);
-    // strcpy(AP_ssid, RTLab_502_SSID);
+    ssid_len = strlen(RTLab_502_SSID);
+    strcpy(AP_ssid, RTLab_502_SSID);
 
-    // password_len = strlen(RTLab_AP_PW);
-    // strcpy(AP_password, RTLab_AP_PW);
+    password_len = strlen(RTLab_AP_PW);
+    strcpy(AP_password, RTLab_AP_PW);
 
     // ssid_len = strlen(PROF_HOME_SSID);
     // strcpy(AP_ssid, PROF_HOME_SSID);

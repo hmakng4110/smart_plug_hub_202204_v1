@@ -158,8 +158,8 @@ enum {
 	TWI_MQTT_LOG_REQUEST_ALL,
 };
 
-void twi433_module_task_init(void);
-int twi433_event_send(uint8_t evt, uint8_t state, uint8_t * msg);
-int twi433_sensor_processing_event_send(uint8_t evt, uint8_t state, uint8_t * msg);
+void twi433_module_task_tinyML_init(void);
+int twi433_tinyML_event_send(uint8_t evt, uint8_t state, uint8_t * msg);
+int twi433_sensor_processing_tinyML_event_send(uint8_t evt, uint8_t state, uint8_t * msg);
 
 #endif /* APP_TWI_SENSOR_READ_TWI_SENSOR_MODULE_H_ */
