@@ -5,8 +5,8 @@
  *      Author: YJPark
  */
 
-#ifndef APPLICATION_LIB_BLUETOOTH_CSOS_LAP_MAIN_H_
-#define APPLICATION_LIB_BLUETOOTH_CSOS_LAP_MAIN_H_
+#ifndef APPLICATION_SPH_CSOS_LAP_MAIN_H_
+#define APPLICATION_SPH_CSOS_LAP_MAIN_H_
 
 typedef struct
 {
@@ -71,5 +71,5 @@ void LAP_main_task_init(void);
 int LAP_event_send(uint8_t evt, uint8_t state, uint16_t conn_handle, uint16_t handle,
 									uint32_t msg_len, uint8_t* msg);
 
-
-#endif /* APPLICATION_LIB_BLUETOOTH_CSOS_LAP_MAIN_H_ */
+void stop_mqtt_send_timeout();
+#endif /* APPLICATION_SPH_CSOS_LAP_MAIN_H_ */

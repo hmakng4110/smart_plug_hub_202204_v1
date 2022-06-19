@@ -40,10 +40,10 @@
  * scan parameter
  */
 #define SCAN_INTERVAL					0x0A40//0x0C80	        /**< (1000ms) Determines scan interval in units of 0.625 millisecond. */
-#define SCAN_WINDOW            			0x0140//0x0280//0x0140          /**< (100ms) Determines scan window in units of 0.625 millisecond. */
+#define SCAN_WINDOW            			0x0280//0x0280//0x0140          /**< (100ms) Determines scan window in units of 0.625 millisecond. */
 #define SCAN_ACTIVE             		0               /**< If 1, performe active scanning (scan requests). */
 #define SCAN_SELECTIVE         			0               /**< If 1, ignore unknown devices (non whitelisted). */
-#define SCAN_TIMEOUT            		0x280//0x0280//0x0140          /**< Scan timeout between 0x0001 and 0xFFFF in seconds, 0x0000 disables timeout. */
+#define SCAN_TIMEOUT            		0x500//0X780//0x0280//0x0140          /**< Scan timeout between 0x0001 and 0xFFFF in seconds, 0x0000 disables timeout. */
 
 /**
  * connection parameter

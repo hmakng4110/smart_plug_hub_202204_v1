@@ -50,7 +50,7 @@ int appmain(int argc, char *argv[]) {
 
 	LAP_main_task_init();
 
-	twi433_module_task_init();
+	//twi433_module_task_init();
 
 	ubik_comp_start();
 

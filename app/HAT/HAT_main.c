@@ -16,6 +16,8 @@
 #include "Button.h"
 #include "LED.h"
 #include "TMR_PPI_SAADC.h"
+#include "HAT_BLE_Protocol.h"
+
 #include "LAP_main.h"
 
 #include "sw_config.h"
@@ -125,6 +127,7 @@ void app_tick_handler(void* p_context){
 
 }
 
+/*
 void BLE_send_result(uint8_t App_ID, uint8_t Act_ON, uint8_t Act_LVL)
 {
 	uint8_t temp_packet[PAAR_MAXIMUM_PACKET_SIZE] = {0, };
@@ -136,8 +139,8 @@ void BLE_send_result(uint8_t App_ID, uint8_t Act_ON, uint8_t Act_LVL)
 	temp_packet[PAC_LEN_INDEX] 		= LEN_RES;
 
 	temp_packet[PAC_CMD_INDEX] 		= CMD_RES;
-	temp_packet[PAC_APP_ID0_INDEX] 	= TEST_HOME_APPLIANCE_ID0;
-	temp_packet[PAC_APP_ID1_INDEX] 	= TEST_HOME_APPLIANCE_ID1;
+//	temp_packet[PAC_APP_ID0_INDEX] 	= TEST_HOME_APPLIANCE_ID0;
+//	temp_packet[PAC_APP_ID1_INDEX] 	= TEST_HOME_APPLIANCE_ID1;
 	temp_packet[PAC_ACT_PWR_INDEX] 	= Act_ON;
 
 	task_sleep(TEST_SEND_MSG_DELAY);
@@ -146,10 +149,23 @@ void BLE_send_result(uint8_t App_ID, uint8_t Act_ON, uint8_t Act_LVL)
 
 	LAP_send_ble_msg_peripheral(temp_packet, PAAR_MAXIMUM_PACKET_SIZE);
 }
+*/
 
 void HAT_main_task(void* arg){
 	int r;
 	HATEvt_msgt HAT_evt_msg;
+
+
+	#if 1
+	task_sleep(5000);
+	while(1)
+	{
+		task_sleep(5000);
+		send_HTT_result_packet(0x01);
+		task_sleep(5000);
+		send_HTT_result_packet(0x02);
+	}
+	#endif
 
 	nrf_drv_gpiote_init();
 	ble_stack_init_wait();
@@ -228,8 +244,8 @@ void HAT_main_task(void* arg){
 			 * The way events occur is all different, but the tasks that must be done are all the same, so they are treated the same.*/
 			//-------------------------------------------------------------------------
 			case HAT_SAADC_LIMIT_BOUND:
-//			case HAT_SAADC_REQUEST:
-//			case HAT_CRNT_LVL_CHANGE:
+			case HAT_SAADC_REQUEST:
+			case HAT_CRNT_LVL_CHANGE:
 					saadc_get_packet(&saadc_packet, App_max_crnt);					// Get the current lvl.
 
 					//ovr = saadc_packet.CRNT_OVR;
@@ -238,28 +254,19 @@ void HAT_main_task(void* arg){
 
 					err_code = app_timer_start(m_tick_timer, APP_TICK_EVENT_INTERVAL, NULL);
 				    APP_ERROR_CHECK(err_code);
+					//Do test...
+					break;
 			case HAT_REPLY_TMR_EVT:
 
 					if(current_state != ovr)
 					{
 						/* App ID + ON/OFF + LVL */
-						BLE_send_result(Appliance_ID, ovr, lvl);
+						//BLE_send_result(Appliance_ID, ovr, lvl);
+						send_HAT_result_packet(ovr);
 						LED_toggle(PIN_LED2);
 					}
 					current_state = ovr;
 				break;
-			//-------------------------------------------------------------------------
-
-
-
-/*
-			case HAT_REPLY_TMR_EVT:
-				//_____________________________________________________________________________
-				BLE_send_res(Appliance_ID, 0, tmp_crnt);
-				//_____________________________________________________________________________
-				break;
-*/
-
 			default :
 				break;
 
@@ -284,7 +291,7 @@ void HAT_main_task_init(void){
 		printf("fail at msgq create\r\n");
 	}
 
-	r = task_create(NULL, HAT_main_task, NULL, task_gethighestpriority()-2, 512, NULL);
+	r = task_create(NULL, HAT_main_task, NULL, task_gethighestpriority()-2, 1024, NULL);
 	if (r != 0) {
 		printf("== HAT_main_task failed \n\r");
 	} else {

@@ -14,6 +14,46 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define ATT_DEFAULT_ACC_ON_CHECK_MIN	3000
+#define ATT_DEFAULT_ACC_ON_CHECK_MAX	10000
+
+#define ATT_DEFAULT_ACC_OFF_CHECK_MIN	-3000
+#define ATT_DEFAULT_ACC_OFF_CHECK_MAX	1500
+
+#define ATT_DEFAULT_GYRO_ON_CHECK_MIN	100
+#define ATT_DEFAULT_GYRO_ON_CHECK_MAX	10000
+
+#define ATT_DEFAULT_GYRO_OFF_CHECK_MIN	-10000
+#define ATT_DEFAULT_GYRO_OFF_CHECK_MAX	-50
+
+#define DEFAULT_ACC_DATA_WINDOW_SIZE	20
+#define DEFAULT_ACC_DATA_VALUE			0
+#define DEFAULT_ACC_DATA_PERIOD_MS		100
+
+#define DEFAULT_GYRO_DATA_WINDOW_SIZE	20
+
+#define NUM_ACC_GYRO_AXIS				3
+
+#define DEFAULT_ACC_GUARD_FILTER_DELAY_MS		500
+
+#define UPDATE_VAL_SLEEP_COUNT	 100
+
+#define PAAR_SETUP_PACKET_LEN_SENSOR_STREAM	PAAR_PACKET_HEADER_LEN+13
+
+#define PAAR_SETUP_INDEX_SENSOR_STREAM_ACC_X  PAAR_PACKET_INDEX_BODY_DATA_BODY
+#define PAAR_SETUP_INDEX_SENSOR_STREAM_ACC_Y  PAAR_PACKET_INDEX_BODY_DATA_BODY+2
+#define PAAR_SETUP_INDEX_SENSOR_STREAM_ACC_Z  PAAR_PACKET_INDEX_BODY_DATA_BODY+4
+#define PAAR_SETUP_INDEX_SENSOR_STREAM_GYRO_X  PAAR_PACKET_INDEX_BODY_DATA_BODY+6
+#define PAAR_SETUP_INDEX_SENSOR_STREAM_GYRO_Y  PAAR_PACKET_INDEX_BODY_DATA_BODY+8
+#define PAAR_SETUP_INDEX_SENSOR_STREAM_GYRO_Z  PAAR_PACKET_INDEX_BODY_DATA_BODY+10
+
+#define PAAR_SETUP_PACKET_LEN_GYRO_STREAM	PAAR_PACKET_HEADER_LEN+5
+
+#define TEST_STEAMING_PERIOD 		200
+#define ATT_SLEEP_CNT_ACC_MODE		10
+#define ATT_SLEEP_CNT_GYRO_MODE		10
+#define ATT_SLEEP_CNT_SETUP_MODE	100
+
 typedef struct
 {
 	uint8_t event;
@@ -22,14 +62,8 @@ typedef struct
 }AATMainEvt_t;
 
 enum{
-	AAT_BATT_EVT = 0,
-	AAT_KEY_CHANGE_EVT,
-	AAT_ACC_EVT,
-	AAT_ACC_INT_EVT,
+	AAT_ACC_EVT = 0,
 	AAT_ALS_EVT,
-	AAT_SEND_EVT,
-	AAT_FLASH_EVT,
-	AAT_LED_EVT,
 };
 
 enum{
@@ -42,54 +76,7 @@ enum{
 	LIGHT_ON,
 };
 
-//AAT LF Event State
-//enum
-//{
-//	AAT_LF_DATA_EVT_ST = 0,
-//	SESSION_TIMEOUT_EVT,
-//};
-
-//AAT BUTTON Event State
-enum{
-	AAT_SHORT_KEY_EVT_ST = 0,
-	AAT_LONG_KEY_EVT_ST
-};
-
-enum{
-	AAT_FLASH_WORK_START = 0,
-	AAT_FLASH_WORK_STOP,
-	AAT_FLASH_WORK_Length,
-	AAT_FLASH_WORK_LOAD,
-};
-
-#define AAT_Log_Error			0x00
-#define AAT_Log_Go_into			0x01
-#define	AAT_Log_Go_out			0x02
-#define AAT_Log_Work_Start		0x03
-#define AAT_Log_Work_Stop		0x04
-
-enum{
-	AAT_LED_CONNECT = 0,
-	AAT_LED_DISCONNECT,
-};
-
-//typedef struct _date_time_
-//{
-//	uint32_t	ms;
-//	uint8_t 	LF_id;
-//	float		rssi;
-//} LF_date_time;
-
 uint8_t AAT_Main_event_send(uint8_t Main_evt, uint16_t Main_evt_state, uint8_t* msg);
 void AAT_main_task_init(void);
-uint8_t get_log_count(void);
-void Work_Log_test_code(void);
-
-extern bool ConnectionFlag;
-bool CalibMod;
-uint8_t Calib_up[3];
-uint8_t Calib_Down[3];
-uint8_t Calib_Right[3];
-uint8_t Calib_Left[3];
 
 #endif /* APP_AAT_MAIN_H_ */

@@ -13,6 +13,8 @@
 #include "nrf_drv_twi.h"
 #include "twi_include.h"
 
+#include "drv_ext_gpio.h"
+
 #include "sw_config.h"
 
 #define LPS22HB_ADDR	0x5c		//Low Power Accelerometer 	0b 1011100
@@ -29,6 +31,131 @@
 
 #define NO_INTERRUPT_PIN	0xffffffff
 
+
+#if(SAAL_HW_DEVICE_TYPE == SAAL_HW_DEVICE_THINGY52)
+typedef enum
+{
+    PIN_CLEAR,
+    PIN_SET,
+    PIN_NO_OUTPUT
+}pin_output_state_t;
+
+typedef struct
+{
+    drv_ext_gpio_pin_dir_t          dir;
+    drv_ext_gpio_pin_input_buf_t    input_buf;
+    drv_ext_gpio_pin_pull_t         pull_config;
+    drv_ext_gpio_pin_drive_type_t   drive_type;
+    drv_ext_gpio_pin_slew_rate_t    slew_rate;
+    pin_output_state_t              state;
+}sx_gpio_cfg_t;
+
+
+#define SX_PIN_OUTPUT_CLEAR    {DRV_EXT_GPIO_PIN_DIR_OUTPUT,                   \
+                                DRV_EXT_GPIO_PIN_INPUT_BUF_ENABLED,            \
+                                DRV_EXT_GPIO_PIN_NOPULL,                       \
+                                DRV_EXT_GPIO_PIN_DRIVE_PUSHPULL,               \
+                                DRV_EXT_GPIO_PIN_INCREASED_SLEWRATE_DISABLED,  \
+                                PIN_CLEAR}
+
+#define SX_PIN_OUTPUT_SET      {DRV_EXT_GPIO_PIN_DIR_OUTPUT,                   \
+                                DRV_EXT_GPIO_PIN_INPUT_BUF_ENABLED,            \
+                                DRV_EXT_GPIO_PIN_NOPULL,                       \
+                                DRV_EXT_GPIO_PIN_DRIVE_PUSHPULL,               \
+                                DRV_EXT_GPIO_PIN_INCREASED_SLEWRATE_DISABLED,  \
+                                PIN_SET}
+
+#define SX_PIN_INPUT_NOPULL    {DRV_EXT_GPIO_PIN_DIR_INPUT,                    \
+                                DRV_EXT_GPIO_PIN_INPUT_BUF_ENABLED,            \
+                                DRV_EXT_GPIO_PIN_NOPULL,                       \
+                                DRV_EXT_GPIO_PIN_DRIVE_PUSHPULL,               \
+                                DRV_EXT_GPIO_PIN_INCREASED_SLEWRATE_DISABLED,  \
+                                PIN_NO_OUTPUT}
+
+#define SX_PIN_INPUT_PULLDOWN  {DRV_EXT_GPIO_PIN_DIR_INPUT,                    \
+                                DRV_EXT_GPIO_PIN_INPUT_BUF_ENABLED,            \
+                                DRV_EXT_GPIO_PIN_PULLDOWN,                     \
+                                DRV_EXT_GPIO_PIN_DRIVE_PUSHPULL,               \
+                                DRV_EXT_GPIO_PIN_INCREASED_SLEWRATE_DISABLED,  \
+                                PIN_NO_OUTPUT}                                
+
+#define SX_PIN_INPUT_PULLUP    {DRV_EXT_GPIO_PIN_DIR_INPUT,                    \
+                                DRV_EXT_GPIO_PIN_INPUT_BUF_ENABLED,            \
+                                DRV_EXT_GPIO_PIN_PULLUP,                       \
+                                DRV_EXT_GPIO_PIN_DRIVE_PUSHPULL,               \
+                                DRV_EXT_GPIO_PIN_INCREASED_SLEWRATE_DISABLED,  \
+                                PIN_NO_OUTPUT}
+
+#define SX_IOEXT_NUM_PINS                   16
+
+#define SX_IOEXT_0                          0
+#define IOEXT_PIN00_SYSTEM_DEFAULT_CFG      SX_PIN_OUTPUT_CLEAR
+
+#define SX_IOEXT_1                          1
+#define IOEXT_PIN01_SYSTEM_DEFAULT_CFG      SX_PIN_OUTPUT_CLEAR
+
+#define SX_IOEXT_2                          2
+#define IOEXT_PIN02_SYSTEM_DEFAULT_CFG      SX_PIN_OUTPUT_CLEAR
+
+#define SX_IOEXT_3                     		 3
+#define IOEXT_PIN03_SYSTEM_DEFAULT_CFG  	SX_PIN_OUTPUT_CLEAR
+
+#define SX_BAT_MON_EN                   	4
+#define IOEXT_PIN04_SYSTEM_DEFAULT_CFG  	SX_PIN_INPUT_NOPULL
+
+#define SX_LIGHTWELL_G                      5
+#define IOEXT_PIN05_SYSTEM_DEFAULT_CFG      SX_PIN_OUTPUT_SET
+
+#define SX_LIGHTWELL_B                      6
+#define IOEXT_PIN06_SYSTEM_DEFAULT_CFG      SX_PIN_OUTPUT_SET
+
+#define SX_LIGHTWELL_R                      7
+#define IOEXT_PIN07_SYSTEM_DEFAULT_CFG      SX_PIN_OUTPUT_SET
+
+#define SX_MPU_PWR_CTRL                 	8
+#define IOEXT_PIN08_SYSTEM_DEFAULT_CFG  	SX_PIN_OUTPUT_CLEAR
+
+#define SX_MIC_PWR_CTRL                 	9
+#define IOEXT_PIN09_SYSTEM_DEFAULT_CFG  	SX_PIN_OUTPUT_CLEAR
+
+#define SX_CCS_PWR_CTRL                 	10
+#define IOEXT_PIN10_SYSTEM_DEFAULT_CFG  	SX_PIN_OUTPUT_CLEAR
+
+#define SX_CCS_RESET                        11
+#define IOEXT_PIN11_SYSTEM_DEFAULT_CFG      SX_PIN_INPUT_PULLDOWN
+
+#define SX_CCS_WAKE                         12
+#define IOEXT_PIN12_SYSTEM_DEFAULT_CFG      SX_PIN_INPUT_PULLDOWN
+
+#define SX_SENSE_LED_R                      13
+#define IOEXT_PIN13_SYSTEM_DEFAULT_CFG      SX_PIN_OUTPUT_SET
+
+#define SX_SENSE_LED_G                      14
+#define IOEXT_PIN14_SYSTEM_DEFAULT_CFG      SX_PIN_OUTPUT_SET
+
+#define SX_SENSE_LED_B                      15
+#define IOEXT_PIN15_SYSTEM_DEFAULT_CFG      SX_PIN_OUTPUT_SET
+
+#define IOEXT_SYSTEM_DEFAULT_PIN_CFG \
+{                                    \
+    IOEXT_PIN00_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN01_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN02_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN03_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN04_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN05_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN06_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN07_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN08_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN09_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN10_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN11_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN12_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN13_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN14_SYSTEM_DEFAULT_CFG,  \
+    IOEXT_PIN15_SYSTEM_DEFAULT_CFG   \
+};
+#endif
 
 typedef struct _twi433_msgq_event_t {
 	uint8_t event;
@@ -158,8 +285,18 @@ enum {
 	TWI_MQTT_LOG_REQUEST_ALL,
 };
 
+void evironment_sensor_module_init();
+uint32_t sh_environment_enable();
+
 void twi433_module_task_init(void);
 int twi433_event_send(uint8_t evt, uint8_t state, uint8_t * msg);
 int twi433_sensor_processing_event_send(uint8_t evt, uint8_t state, uint8_t * msg);
+
+float sh_pressure_get(void);
+int16_t sh_humidity_get(void);
+float sh_temperature_get(void);
+drv_bh1745_data_t sh_color_get(void);
+uint16_t sh_gas_raw_get(void);
+drv_ccs811_alg_result_t sh_gas_alg_get(void);
 
 #endif /* APP_TWI_SENSOR_READ_TWI_SENSOR_MODULE_H_ */

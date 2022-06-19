@@ -62,12 +62,14 @@ void SPH_main_task_init(void){
 		printf("fail at msgq create\r\n");
 	}
 
+/*
 	r = task_create(NULL, SPH_main_task, NULL, task_gethighestpriority()-2, 512, NULL);
 	if (r != 0) {
 		printf("== SPH_main_task failed \n\r");
 	} else {
 		printf("== SPH_main_task created \n\r");
 	}
+	*/
 }
 
 int SPH_event_send(uint8_t evt, uint8_t state, uint8_t* msg)

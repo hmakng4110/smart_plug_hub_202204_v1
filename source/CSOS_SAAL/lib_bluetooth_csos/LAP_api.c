@@ -185,10 +185,10 @@ bool is_LAP_adv_packet(LAP_ble_adv_report* pPkt)
 
 int process_LAP_location_request_packet(LAP_ble_adv_report* pPkt)
 {
+	printf("rssi = %d\r\n", pPkt->rssi);
 	BLE_cell_management_data_add(pPkt);
 
 	return 0;
-
 }
 
 bool add_LAP_location_request()
@@ -314,7 +314,11 @@ int LAP_send_ble_msg_peripheral(uint8_t* msg, uint8_t msg_len)
 
 	temp_msg= malloc(msg_len);
 	if(temp_msg == NULL)
+	{
+		printf("malloc fail : LAP_send_ble_msg_peripheral \r\n");
 		return -1;
+	}
+		
 
 	memcpy(temp_msg, msg, msg_len);
 
